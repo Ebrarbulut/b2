@@ -1,0 +1,85 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Model files (büyük dosyalar)
+models/**/*.h5
+models/**/*.pkl
+models/**/*.joblib
+*.h5
+*.pkl
+*.joblib
+
+# Data files (büyük dosyalar - sadece örnek dosyalar commit edilmeli)
+data/
+!data/.gitkeep
+
+# Output files
+outputs/**/*
+!outputs/.gitkeep
+!outputs/logs/.gitkeep
+!outputs/metrics/.gitkeep
+!outputs/predictions/.gitkeep
+
+# Logs - ALL directories
+*.log
+logs/
+
+# PCAP files - ALL directories  
+*.pcap
+*.pcapng
+
+# OS
+Thumbs.db
+.DS_Store
+
+# TensorFlow
+*.pb
+checkpoint
+*.ckpt*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Zeek logs
+*.log.gz
+*.log.bz2
+data/raw/
+data/pcap/
