@@ -43,21 +43,10 @@ def page_analyze_custom_pcap():
     
     st.markdown("## 📁 **Adım 1: Dosya Yükle**")
     
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        upload_type = st.radio(
-            "Hangi dosya tipini yükleyeceksin?",
-            ["PCAP Dosyası (.pcap)", "Zeek conn.log", "CSV (özellikler çıkarılmış)"],
-            help="PCAP'i Zeek ile işleyip conn.log'a çevirebiliriz"
-        )
-    
-    # Adım 1: Dosya yükleme
-    st.markdown("## 📁 **Adım 1: Dosya Yükle**")
-    
     upload_type = st.radio(
         "Hangi dosya tipini yükleyeceksin?",
-        ["PCAP Dosyası (.pcap)", "Zeek conn.log", "CSV (özellikler çıkarılmış)"]
+        ["PCAP Dosyası (.pcap)", "Zeek conn.log", "CSV (özellikler çıkarılmış)"],
+        help="PCAP'i Zeek ile işleyip conn.log'a çevirebiliriz"
     )
     
     uploaded_file = st.file_uploader(

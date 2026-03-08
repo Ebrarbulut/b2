@@ -13,6 +13,13 @@ import pandas as pd
 from pathlib import Path
 import sys
 
+# Proje kök dizinini sys.path'e ekle ki `scripts.*` paketleri her yerden import edilebilsin
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from scripts.config.paths import BASE_DIR, PCAP_DIR, RAW_DIR, LABELED_DIR
+
 # Windows console encoding fix
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -23,12 +30,6 @@ except Exception:
 print("=" * 70)
 print("🔗 LOG BİRLEŞTİRME VE OTOMATİK ETİKETLEME")
 print("=" * 70)
-
-# === PATHS ===
-BASE_DIR = Path(__file__).resolve().parent.parent
-PCAP_DIR = BASE_DIR / "data" / "pcap"
-RAW_DIR = BASE_DIR / "data" / "raw"
-LABELED_DIR = BASE_DIR / "data" / "labeled"
 
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 LABELED_DIR.mkdir(parents=True, exist_ok=True)

@@ -4,6 +4,13 @@ from pathlib import Path
 from scipy.stats import entropy
 import sys
 
+# Proje kök dizinini sys.path'e ekle ki `scripts.*` paketleri her yerden import edilebilsin
+ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from scripts.config.paths import LABELED_DIR, FEATURE_DIR
+
 # Windows console encoding fix (avoid UnicodeEncodeError for emojis / Turkish chars)
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -14,9 +21,7 @@ except Exception:
 print("🚀 Advanced Feature Engineering")
 
 # === PATHS ===
-BASE_DIR = Path.cwd()  # Use current working directory instead of __file__
-LABELED_FILE = BASE_DIR / "data" / "labeled" / "labeled_traffic.csv"
-FEATURE_DIR = BASE_DIR / "data" / "features"
+LABELED_FILE = LABELED_DIR / "labeled_traffic.csv"
 FEATURE_DIR.mkdir(parents=True, exist_ok=True)
 
 OUTPUT_FILE = FEATURE_DIR / "advanced_features.csv"

@@ -182,6 +182,25 @@ network_anomaly_detection_system/
 └── README.md                     # This file
 ```
 
+## 🧱 Mimar i Özeti (Architecture Overview)
+
+- **Veri Pipeline'ı**:  
+  PCAP → (Zeek veya `pcap_to_connlog_simple.py`) → `conn.log` → `merge_and_label_logs.py` ile etiketleme →
+  `data_pipeline/advanced_features.py` ile 12+ özellik çıkarımı → `data/features/advanced_features.csv`.
+
+- **Model Katmanı**:  
+  `scripts/models_unsupervised/` altında Standard Autoencoder, LSTM Autoencoder, Isolation Forest, One-Class SVM;  
+  `scripts/ensemble_voting.py` ve `monitoring/ensemble_detector.py` ile ensemble ve voting stratejileri.
+
+- **Monitoring & Analiz**:  
+  `monitoring/threshold_optimizer.py` ile threshold optimizasyonu,  
+  `monitoring/drift_detection.py` ile drift tespiti ve raporlama,  
+  `outputs/*.json` raporları üzerinden Streamlit arayüzünde görselleştirme.
+
+- **Arayüz**:  
+  `streamlit_app.py` ve diğer `streamlit_*` dosyaları, eğitim/test çıktılarından beslenen
+  interaktif güvenlik analizi arayüzü sunar.
+
 ## 🔬 Modeller (Models)
 
 ### Standard Autoencoder

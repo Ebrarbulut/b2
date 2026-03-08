@@ -19,7 +19,8 @@ predictions, scores = detector.predict(X_test)
 import numpy as np
 import pandas as pd
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense
+from tensorflow.keras.layers import Input, Dense, Dropout
+from tensorflow.keras import regularizers
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (
@@ -35,19 +36,33 @@ class StandardAutoencoder:
     Standard Dense Autoencoder ile anomali tespiti
     """
     
-    def __init__(self, encoding_dim=16, activation='relu', 
-                 optimizer='adam', loss='mse'):
+    def __init__(
+        self,
+        encoding_dim=16,
+        activation='relu',
+        optimizer='adam',
+        loss='mse',
+        hidden_multiplier: int = 2,
+        dropout_rate: float = 0.0,
+        l2_reg: float | None = None,
+    ):
         """
         Args:
             encoding_dim: Bottleneck boyutu
             activation: Activation function
             optimizer: Optimizer
             loss: Loss function
+            hidden_multiplier: Encoder/decoder gizli katman boyutu için çarpan
+            dropout_rate: Encoder bottleneck öncesi dropout oranı (0 = kapalı)
+            l2_reg: L2 regularization katsayısı (None = kapalı)
         """
         self.encoding_dim = encoding_dim
         self.activation = activation
         self.optimizer = optimizer
         self.loss = loss
+        self.hidden_multiplier = hidden_multiplier
+        self.dropout_rate = dropout_rate
+        self.l2_reg = l2_reg
         
         self.model = None
         self.encoder = None
@@ -68,13 +83,33 @@ class StandardAutoencoder:
         
         # Input
         input_layer = Input(shape=(input_dim,))
-        
+
+        # Opsiyonel L2 regularizer
+        kernel_reg = (
+            regularizers.l2(self.l2_reg) if self.l2_reg is not None else None
+        )
+
         # Encoder
-        encoded = Dense(self.encoding_dim * 2, activation=self.activation)(input_layer)
-        encoded = Dense(self.encoding_dim, activation=self.activation)(encoded)
-        
+        encoded = Dense(
+            self.encoding_dim * self.hidden_multiplier,
+            activation=self.activation,
+            kernel_regularizer=kernel_reg,
+        )(input_layer)
+        encoded = Dense(
+            self.encoding_dim,
+            activation=self.activation,
+            kernel_regularizer=kernel_reg,
+        )(encoded)
+
+        if self.dropout_rate and self.dropout_rate > 0.0:
+            encoded = Dropout(self.dropout_rate)(encoded)
+
         # Decoder
-        decoded = Dense(self.encoding_dim * 2, activation=self.activation)(encoded)
+        decoded = Dense(
+            self.encoding_dim * self.hidden_multiplier,
+            activation=self.activation,
+            kernel_regularizer=kernel_reg,
+        )(encoded)
         decoded = Dense(input_dim, activation='linear')(decoded)
         
         # Autoencoder model
@@ -273,8 +308,11 @@ class StandardAutoencoder:
             'activation': self.activation,
             'optimizer': self.optimizer,
             'loss': self.loss,
+            'hidden_multiplier': self.hidden_multiplier,
+            'dropout_rate': self.dropout_rate,
+            'l2_reg': self.l2_reg,
             'threshold': self.threshold,
-            'input_dim': self.input_dim
+            'input_dim': self.input_dim,
         }
         
         with open('standard_ae_config.pkl', 'wb') as f:
@@ -302,7 +340,10 @@ class StandardAutoencoder:
             encoding_dim=config['encoding_dim'],
             activation=config['activation'],
             optimizer=config['optimizer'],
-            loss=config['loss']
+            loss=config['loss'],
+            hidden_multiplier=config.get('hidden_multiplier', 2),
+            dropout_rate=config.get('dropout_rate', 0.0),
+            l2_reg=config.get('l2_reg'),
         )
         
         # Model yükle
