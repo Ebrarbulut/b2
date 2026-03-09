@@ -77,16 +77,34 @@ def score(request: ScoreRequest):
     detector, feature_names = _get_detector()
     if not request.features:
         raise HTTPException(status_code=400, detail="features boş olamaz")
-    import numpy as np
-    X = np.array(request.features, dtype=float)
+    # Numpy/pandas/sklearn bağımlılıklarını zorunlu kılmamak için
+    # istek verisini saf Python listeleriyle işleriz.
+    try:
+        X = [[float(v) for v in row] for row in request.features]
+    except Exception:
+        raise HTTPException(status_code=400, detail="features sayısal değerlerden oluşmalı")
+
+    n_rows = len(X)
+    n_cols = len(X[0]) if n_rows > 0 else 0
+    if any(len(row) != n_cols for row in X):
+        raise HTTPException(status_code=400, detail="features satır uzunlukları aynı olmalı")
+
     if detector is not None and feature_names is not None:
-        if X.shape[1] != len(feature_names):
+        if n_cols != len(feature_names):
             raise HTTPException(
                 status_code=400,
-                detail=f"Feature sayısı {X.shape[1]} olmalı: {len(feature_names)}"
+                detail=f"Feature sayısı {len(feature_names)} olmalı: {n_cols}"
             )
-        _, scores = detector.predict(X)
-        return ScoreResponse(scores=scores.tolist(), model="IsolationForest")
+        try:
+            _, scores = detector.predict(X)
+            if hasattr(scores, "tolist"):
+                scores_out = scores.tolist()
+            else:
+                scores_out = [float(s) for s in scores]
+            return ScoreResponse(scores=scores_out, model="IsolationForest")
+        except Exception:
+            # Model pipeline'ı ortamda çalışmıyorsa demo moda düş.
+            detector = None
     # Model yoksa demo: rastgele benzeri skorlar
     import random
     scores = [random.uniform(0.0, 0.5) for _ in range(len(request.features))]
