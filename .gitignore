@@ -83,3 +83,4 @@ checkpoint
 *.log.bz2
 data/raw/
 data/pcap/
+frontend/node_modules/
