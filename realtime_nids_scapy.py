@@ -228,17 +228,18 @@ class RealtimeNIDS:
         df = pd.DataFrame(rows)
         X = df.fillna(0.0).values.astype(np.float32)
 
-        # Threshold'u canlı trafikte biraz daha az agresif yapmak için
-        # kaydedilen threshold'u bir çarpanla yükseltiyoruz.
-        # İstersen bu çarpanı (ör. 1.5, 2.0) terminalde gözlemlerine göre değiştirebilirsin.
+        # Threshold'u gerçek ortamda daha temkinli kullanmak için
+        # kaydedilen threshold'u 2.0 katsayısı ile yükseltiyoruz.
+        # Böylece model sadece en uç/vurgulu akışlar için alarm üretir.
         adjusted_threshold = (
-            self.detector.threshold * 1.5 if self.detector.threshold is not None else None
+            self.detector.threshold * 2.0 if self.detector.threshold is not None else None
         )
 
         preds, scores = self.detector.predict(X, threshold=adjusted_threshold)
 
         for f, pred, score in zip(meta, preds, scores):
-            if int(pred) == 1:
+            # Çok düşük skorlu (0'a yakın) anomalileri loglama, yalnızca anlamlı olanları göster
+            if int(pred) == 1 and float(score) > 1.0:
                 print(
                     f"🚨 ANOMALY | {f['id.orig_h']}:{f['id.orig_p']} -> "
                     f"{f['id.resp_h']}:{f['id.resp_p']} | proto={f['proto']} "
