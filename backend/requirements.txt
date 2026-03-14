@@ -1,3 +1,10 @@
 fastapi>=0.100.0
 uvicorn[standard]>=0.22.0
 pydantic>=2.0.0
+# CSV / PCAP analiz ve model tahini için
+pandas>=1.5.0
+numpy>=1.23.0
+scapy>=2.5.0
+scikit-learn>=1.2.0
+tensorflow>=2.12.0
+joblib>=1.3.0

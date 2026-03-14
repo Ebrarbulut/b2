@@ -1,3 +1,5 @@
+import logging
+import sys
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -23,6 +25,19 @@ BATCH_SIZE = 100           # Aynı anda modele gönderilecek flow sayısı
 
 # Hassasiyet ayarı: 'yuksek' (çok uyarı), 'orta', 'dusuk' (daha az uyarı)
 SENSITIVITY = "dusuk"
+
+# Log: hem dosyaya hem konsola (exe --noconsole ile çalışınca sadece dosyada görünür)
+# cwd kullanıyoruz ki .exe çift tıklanınca log, exe'nin olduğu klasörde oluşsun
+_LOG_FILE = Path.cwd() / "nad_sensor.log"
+_handler_file = logging.FileHandler(_LOG_FILE, encoding="utf-8")
+_handler_console = logging.StreamHandler(sys.stdout)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[_handler_file, _handler_console],
+)
+log = logging.getLogger(__name__)
 
 
 def _load_feature_columns() -> list[str]:
@@ -88,7 +103,7 @@ def _load_ocsvm() -> OneClassSVMDetector | None:
     scaler_path = MODELS_DIR / "ocsvm_scaler.pkl"
     config_path = BASE_DIR / "ocsvm_config.pkl"
     if not model_path.exists() or not scaler_path.exists() or not config_path.exists():
-        print("⚠️ One-Class SVM model dosyaları bulunamadı, sadece Autoencoder kullanılacak.")
+        log.warning("One-Class SVM model dosyaları bulunamadı, sadece Autoencoder kullanılacak.")
         return None
     try:
         return OneClassSVMDetector.load_model(
@@ -97,7 +112,7 @@ def _load_ocsvm() -> OneClassSVMDetector | None:
             config_path=str(config_path),
         )
     except Exception as e:
-        print(f"⚠️ One-Class SVM yüklenemedi: {e}")
+        log.warning("One-Class SVM yüklenemedi: %s", e)
         return None
 
 
@@ -110,7 +125,7 @@ def _load_isolation_forest() -> IsolationForestDetector | None:
     scaler_path = MODELS_DIR / "if_scaler.pkl"
     config_path = BASE_DIR / "if_config.pkl"
     if not model_path.exists() or not scaler_path.exists() or not config_path.exists():
-        print("ℹ️ Isolation Forest model dosyaları bulunamadı (opsiyonel).")
+        log.info("Isolation Forest model dosyaları bulunamadı (opsiyonel).")
         return None
     try:
         return IsolationForestDetector.load_model(
@@ -119,7 +134,33 @@ def _load_isolation_forest() -> IsolationForestDetector | None:
             config_path=str(config_path),
         )
     except Exception as e:
-        print(f"⚠️ Isolation Forest yüklenemedi: {e}")
+        log.warning("Isolation Forest yüklenemedi: %s", e)
+        return None
+
+
+def _load_lstm():
+    """
+    LSTM Autoencoder modelini yükle (varsa). Canlıda son N akış penceresi ile skor üretilir.
+    """
+    try:
+        from scripts.models_unsupervised.lstm_autoencoder import LSTMAnomalyDetector
+    except Exception as e:
+        log.warning("LSTM modülü yüklenemedi: %s", e)
+        return None
+    model_path = MODELS_DIR / "lstm_autoencoder.keras"
+    scaler_path = MODELS_DIR / "lstm_scaler.pkl"
+    config_path = BASE_DIR / "lstm_config.pkl"
+    if not model_path.exists() or not scaler_path.exists() or not config_path.exists():
+        log.info("LSTM Autoencoder model dosyaları bulunamadı (opsiyonel).")
+        return None
+    try:
+        return LSTMAnomalyDetector.load_model(
+            model_path=str(model_path),
+            scaler_path=str(scaler_path),
+            config_path=str(config_path),
+        )
+    except Exception as e:
+        log.warning("LSTM Autoencoder yüklenemedi: %s", e)
         return None
 
 
@@ -145,22 +186,23 @@ class RealtimeNIDS:
         # Ek sinyal: One-Class SVM (ve opsiyonel Isolation Forest)
         self.ocsvm_detector = _load_ocsvm()
         self.if_detector = _load_isolation_forest()
+        self.lstm_detector = _load_lstm()
 
         # key: (src_ip, src_port, dst_ip, dst_port, proto)
         self.flows: dict[tuple, dict] = {}
         self.last_flush_time = time.time()
 
-        print("✅ Realtime NIDS hazır.")
-        print(f"   Interface: {self.interface or 'varsayılan'}")
-        print(f"   Flow timeout: {self.flow_timeout} sn")
-        print(f"   Batch size: {self.batch_size}")
-        print(f"   Feature sayısı: {len(self.feature_columns)}")
+        log.info("Realtime NIDS hazır.")
+        log.info("   Interface: %s | Flow timeout: %s sn | Batch size: %s | Feature sayısı: %s",
+                 self.interface or "varsayılan", self.flow_timeout, self.batch_size, len(self.feature_columns))
         aktif_modeller = ["Autoencoder"]
         if self.ocsvm_detector is not None:
             aktif_modeller.append("One-Class SVM")
         if self.if_detector is not None:
             aktif_modeller.append("Isolation Forest")
-        print(f"   Kullanılan modeller: {', '.join(aktif_modeller)}")
+        if self.lstm_detector is not None:
+            aktif_modeller.append("LSTM AE")
+        log.info("   Kullanılan modeller: %s", ", ".join(aktif_modeller))
 
     # === FLOW YÖNETİMİ ===
 
@@ -312,6 +354,18 @@ class RealtimeNIDS:
         if self.if_detector is not None:
             if_preds, if_scores = self.if_detector.predict(X)
 
+        # LSTM: son sequence_length akıştan tek pencere skoru (batch için ortak)
+        lstm_window_score: float | None = None
+        if self.lstm_detector is not None and len(X) >= self.lstm_detector.sequence_length:
+            seq_len = self.lstm_detector.sequence_length
+            n_f = self.lstm_detector.n_features
+            X_window = X[-seq_len:].reshape(1, seq_len, n_f)
+            try:
+                _, lstm_scores = self.lstm_detector.predict(X_window)
+                lstm_window_score = float(lstm_scores[0])
+            except Exception:
+                lstm_window_score = None
+
         for idx, (f, ae_pred, ae_score) in enumerate(zip(meta, ae_preds, ae_scores)):
             # Model başına anomaly flag
             votes = []
@@ -332,6 +386,16 @@ class RealtimeNIDS:
                 votes.append(if_anom)
                 scores_str.append(f"IF={if_score:.3f}")
 
+            if lstm_window_score is not None:
+                lstm_threshold = (
+                    self.lstm_detector.threshold * factor
+                    if self.lstm_detector.threshold is not None
+                    else None
+                )
+                lstm_anom = lstm_threshold is not None and lstm_window_score > lstm_threshold and lstm_window_score > min_score
+                votes.append(lstm_anom)
+                scores_str.append(f"LSTM={lstm_window_score:.3f}")
+
             # Karar kuralı:
             # - Birden fazla model varsa: en az 2 model "anomali" diyorsa uyar.
             # - Sadece Autoencoder varsa: AE anomali ve skor > min_score ise uyar.
@@ -342,11 +406,12 @@ class RealtimeNIDS:
                 fire = sum(1 for v in votes if v) >= 2
 
             if fire:
-                print(
-                    f"🚨 ANOMALY | {f['id.orig_h']}:{f['id.orig_p']} -> "
+                msg = (
+                    f"ANOMALY | {f['id.orig_h']}:{f['id.orig_p']} -> "
                     f"{f['id.resp_h']}:{f['id.resp_p']} | proto={f['proto']} "
                     f"| scores: {', '.join(scores_str)}"
                 )
+                log.warning("🚨 %s", msg)
 
         self.last_flush_time = now
 
@@ -362,8 +427,8 @@ class RealtimeNIDS:
             self._flush_flows()
 
     def run(self) -> None:
-        print("🔍 Gerçek zamanlı NIDS başlıyor... (CTRL+C ile durdur)")
-        print("Bu komutu yönetici olarak çalıştırdığından emin ol.")
+        log.info("Gerçek zamanlı NIDS başlıyor... (CTRL+C ile durdur)")
+        log.info("Bu komutu yönetici olarak çalıştırdığından emin ol.")
 
         try:
             sniff(
@@ -372,9 +437,9 @@ class RealtimeNIDS:
                 store=False,
             )
         except PermissionError:
-            print(
-                "❌ PermissionError: Paket yakalamak için yeterli yetki yok.\n"
-                "PowerShell veya terminali 'Yönetici olarak çalıştır' ile açıp tekrar dene."
+            log.error(
+                "PermissionError: Paket yakalamak için yeterli yetki yok. "
+                "PowerShell/terminali 'Yönetici olarak çalıştır' ile açıp tekrar dene."
             )
 
 

@@ -19,56 +19,68 @@ const modelLabels: Record<string, string> = {
   demo: 'Demo',
 }
 
+const fontFamily = "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"
+
 const makeCardStyle = (theme: 'light' | 'dark') =>
   ({
-    marginTop: 24,
-    padding: '24px 22px',
-    borderRadius: 18,
+    marginTop: 28,
+    padding: '28px 26px',
+    borderRadius: 22,
+    fontFamily,
     background:
       theme === 'light'
-        ? 'linear-gradient(145deg, #ffffff 0%, #fdf2f8 30%, #eff6ff 100%)'
-        : 'linear-gradient(145deg, rgba(20,20,20,0.95), rgba(30,30,35,0.9))',
+        ? 'linear-gradient(160deg, #ffffff 0%, #fafaff 35%, #f5f3ff 100%)'
+        : 'linear-gradient(160deg, rgba(18,18,22,0.98) 0%, rgba(24,24,32,0.95) 100%)',
     border:
       theme === 'light'
-        ? '1px solid rgba(219,39,119,0.25)'
-        : '1px solid rgba(244,114,182,0.2)',
+        ? '1px solid rgba(99,102,241,0.18)'
+        : '1px solid rgba(129,140,248,0.15)',
     boxShadow:
       theme === 'light'
-        ? '0 4px 24px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)'
-        : '0 4px 24px rgba(0,0,0,0.4)',
+        ? '0 1px 2px rgba(0,0,0,0.04), 0 12px 40px -8px rgba(99,102,241,0.12), 0 0 0 1px rgba(255,255,255,0.8) inset'
+        : '0 1px 0 rgba(255,255,255,0.04), 0 12px 40px -8px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03) inset',
   } as const)
 
 const makeTitleStyle = (theme: 'light' | 'dark') =>
   ({
-    margin: '0 0 6px 0',
-    fontSize: 17,
-    fontWeight: 600,
+    margin: '0 0 8px 0',
+    fontSize: 20,
+    fontWeight: 800,
+    letterSpacing: '-0.02em',
+    fontFamily,
     background:
       theme === 'light'
-        ? 'linear-gradient(90deg, #db2777, #4f46e5)'
-        : 'linear-gradient(90deg, #f9a8d4, #93c5fd)',
+        ? 'linear-gradient(105deg, #6366f1 0%, #8b5cf6 50%, #c026d3 100%)'
+        : 'linear-gradient(105deg, #a5b4fc 0%, #c4b5fd 50%, #e879f9 100%)',
     WebkitBackgroundClip: 'text' as const,
     color: 'transparent',
   })
 
 const makeDescStyle = (theme: 'light' | 'dark') =>
   ({
-    color: theme === 'light' ? '#374151' : '#d1d5db',
-    fontSize: 13,
-    marginBottom: 14,
-    lineHeight: 1.55,
+    color: theme === 'light' ? '#475569' : '#94a3b8',
+    fontSize: 15,
+    marginBottom: 16,
+    lineHeight: 1.6,
+    fontWeight: 500,
+    fontFamily,
   } as const)
 
-// Tema renkleri: okunabilirlik ve premium his için yüksek kontrast
 const themeColors = (theme: 'light' | 'dark') => ({
-  text: theme === 'light' ? '#111827' : '#f3f4f6',
-  textMuted: theme === 'light' ? '#4b5563' : '#9ca3af',
-  cardBg: theme === 'light' ? 'rgba(255,255,255,0.85)' : 'rgba(17,17,17,0.6)',
-  inputBg: theme === 'light' ? '#f9fafb' : 'rgba(30,30,30,0.9)',
-  inputBorder: theme === 'light' ? 'rgba(107,114,128,0.4)' : 'rgba(148,163,184,0.4)',
-  boxBg: theme === 'light' ? '#f3f4f6' : 'rgba(30,30,30,0.8)',
-  preBg: theme === 'light' ? '#1f2937' : '#0f172a',
-  preText: theme === 'light' ? '#e5e7eb' : '#cbd5e1',
+  text: theme === 'light' ? '#0f172a' : '#f1f5f9',
+  textMuted: theme === 'light' ? '#64748b' : '#94a3b8',
+  cardBg: theme === 'light' ? 'rgba(248,250,252,0.9)' : 'rgba(30,30,40,0.85)',
+  inputBg: theme === 'light' ? '#f8fafc' : 'rgba(30,30,40,0.9)',
+  inputBorder: theme === 'light' ? 'rgba(148,163,184,0.35)' : 'rgba(148,163,184,0.25)',
+  boxBg: theme === 'light' ? '#f1f5f9' : 'rgba(30,30,40,0.7)',
+  preBg: theme === 'light' ? '#1e293b' : '#0f172a',
+  preText: theme === 'light' ? '#e2e8f0' : '#cbd5e1',
+  accent: theme === 'light' ? '#6366f1' : '#818cf8',
+  success: '#059669',
+  danger: '#dc2626',
+  // Kod blokları için yumuşak stil (siyah/koyu yerler soft)
+  codeSoftBg: theme === 'light' ? 'rgba(100,116,139,0.12)' : 'rgba(148,163,184,0.12)',
+  codeSoftText: theme === 'light' ? '#475569' : '#e2e8f0',
 })
 
 export default function App() {
@@ -314,102 +326,115 @@ export default function App() {
     theme === 'light'
       ? {
           minHeight: '100vh',
+          fontFamily,
           background:
-            'radial-gradient(circle at top, #ffe4f3 0, #faf5f9 40%, #eff6ff 70%, #e0f2fe 100%)',
-          color: '#111827',
-          padding: '20px 16px 40px',
+            'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 30%, #eef2ff 60%, #e0e7ff 100%)',
+          color: '#0f172a',
+          padding: '32px 20px 48px',
         }
       : {
           minHeight: '100vh',
-          background: '#0a0a0a',
-          color: '#f3f4f6',
-          padding: '20px 16px 40px',
+          fontFamily,
+          background:
+            'linear-gradient(180deg, #0c0c0f 0%, #12121a 40%, #0f0f14 100%)',
+          color: '#f1f5f9',
+          padding: '32px 20px 48px',
         }
 
   return (
-    <div
-      style={bgStyle}
-    >
-      <div style={{ maxWidth: 920, margin: '0 auto' }}>
-        {/* Üst: Başlık + API durumu + Yükle */}
+    <div style={bgStyle}>
+      <div style={{ maxWidth: 960, margin: '0 auto' }}>
         <header
           style={{
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: 16,
-            marginBottom: 28,
+            gap: 24,
+            marginBottom: 36,
+            padding: '28px 24px 32px',
+            borderRadius: 24,
+            background: theme === 'light'
+              ? 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(241,245,253,0.95) 100%)'
+              : 'linear-gradient(135deg, rgba(24,24,32,0.9) 0%, rgba(18,18,26,0.95) 100%)',
+            border: theme === 'light' ? '1px solid rgba(99,102,241,0.12)' : '1px solid rgba(129,140,248,0.1)',
+            boxShadow: theme === 'light'
+              ? '0 4px 24px -4px rgba(99,102,241,0.15), 0 0 0 1px rgba(255,255,255,0.5) inset'
+              : '0 4px 24px -4px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03) inset',
           }}
         >
-          <div>
+          <div style={{ flex: '1 1 320px' }}>
             <h1
               style={{
-                fontSize: 24,
-                fontWeight: 700,
+                fontSize: 30,
+                fontWeight: 800,
+                letterSpacing: '-0.03em',
                 margin: 0,
+                fontFamily,
                 background:
                   theme === 'light'
-                    ? 'linear-gradient(120deg, #db2777, #4f46e5)'
-                    : 'linear-gradient(120deg, #f9a8d4, #93c5fd)',
+                    ? 'linear-gradient(120deg, #4338ca 0%, #6366f1 40%, #7c3aed 100%)'
+                    : 'linear-gradient(120deg, #818cf8 0%, #a78bfa 50%, #c084fc 100%)',
                 WebkitBackgroundClip: 'text',
                 color: 'transparent',
               }}
             >
               Ağ Anomali Tespiti
             </h1>
-            <p style={{ color: colors.textMuted, marginTop: 6, fontSize: 14, maxWidth: 460, lineHeight: 1.5 }}>
-              Ağınızdaki trafiğin sakin mi, yoksa şüpheli mi olduğunu birkaç tıkla görebilirsiniz. İsterseniz hazır modellerle deneme yapın, isterseniz kendi trafik dosyalarınızı veya canlı trafiğinizi inceleyin.
+            <p style={{ color: colors.textMuted, marginTop: 10, fontSize: 16, maxWidth: 480, lineHeight: 1.6, fontWeight: 500 }}>
+              Ağınızdaki trafiğin sakin mi, yoksa şüpheli mi olduğunu birkaç tıkla görebilirsiniz. Hazır modellerle deneme yapın, kendi trafik dosyalarınızı veya canlı trafiğinizi inceleyin.
             </p>
-            <p style={{ color: colors.textMuted, marginTop: 6, fontSize: 12, maxWidth: 420, opacity: 0.9 }}>
-              Uygulamayı tarayıcıdan &quot;Uygulamayı yükle&quot; diyerek telefonunuza ya da bilgisayarınıza kurabilirsiniz. Kurulduktan sonra normal bir uygulama gibi açılır (masaüstü .exe yerine modern web uygulaması olarak çalışır).
+            <p style={{ color: colors.textMuted, marginTop: 8, fontSize: 14, maxWidth: 440, opacity: 0.95, fontWeight: 500 }}>
+              &quot;Uygulamayı yükle&quot; ile telefon veya bilgisayara kurulur; masaüstü uygulaması gibi açılır.
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div
               style={{
-                padding: '8px 14px',
-                borderRadius: 12,
-                background: healthStatus === 'up' ? 'rgba(34,197,94,0.15)' : healthStatus === 'down' ? 'rgba(239,68,68,0.15)' : theme === 'light' ? 'rgba(107,114,128,0.15)' : 'rgba(148,163,184,0.15)',
-                border: `1px solid ${healthStatus === 'up' ? 'rgba(34,197,94,0.5)' : healthStatus === 'down' ? 'rgba(239,68,68,0.5)' : theme === 'light' ? 'rgba(107,114,128,0.4)' : 'rgba(148,163,184,0.4)'}`,
-                fontSize: 13,
+                padding: '10px 16px',
+                borderRadius: 999,
+                fontSize: 14,
+                fontWeight: 600,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
+                gap: 10,
                 color: colors.text,
+                background: healthStatus === 'up' ? 'rgba(5,150,105,0.12)' : healthStatus === 'down' ? 'rgba(220,38,38,0.12)' : theme === 'light' ? 'rgba(100,116,139,0.12)' : 'rgba(148,163,184,0.1)',
+                border: `1px solid ${healthStatus === 'up' ? 'rgba(5,150,105,0.35)' : healthStatus === 'down' ? 'rgba(220,38,38,0.35)' : theme === 'light' ? 'rgba(100,116,139,0.25)' : 'rgba(148,163,184,0.2)'}`,
               }}
             >
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: healthStatus === 'up' ? '#22c55e' : healthStatus === 'down' ? '#ef4444' : '#94a3b8' }} />
-              Sunucu: {healthStatus === 'up' ? 'Bağlı' : healthStatus === 'down' ? 'Bağlı değil' : '—'} {lastCheck && ` · ${lastCheck}`}
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: healthStatus === 'up' ? '#059669' : healthStatus === 'down' ? '#dc2626' : '#94a3b8', boxShadow: healthStatus === 'up' ? '0 0 8px rgba(5,150,105,0.5)' : 'none' }} />
+              {healthStatus === 'up' ? 'Bağlı' : healthStatus === 'down' ? 'Bağlı değil' : '—'} {lastCheck && <span style={{ fontWeight: 500, opacity: 0.85 }}>· {lastCheck}</span>}
             </div>
             <button
               onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
               style={{
-                padding: '8px 14px',
+                padding: '10px 18px',
                 borderRadius: 999,
-                border: theme === 'light' ? '1px solid #d1d5db' : '1px solid rgba(148,163,184,0.5)',
-                background: theme === 'light' ? '#fff' : 'rgba(30,30,30,0.8)',
+                border: theme === 'light' ? '1px solid rgba(148,163,184,0.4)' : '1px solid rgba(148,163,184,0.25)',
+                background: theme === 'light' ? '#fff' : 'rgba(30,30,40,0.8)',
                 color: colors.text,
-                fontSize: 12,
-                fontWeight: 500,
+                fontSize: 14,
+                fontWeight: 600,
                 cursor: 'pointer',
+                boxShadow: theme === 'light' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
               }}
             >
-              {theme === 'light' ? 'Koyu moda geç' : 'Açık moda geç'}
+              {theme === 'light' ? 'Koyu mod' : 'Açık mod'}
             </button>
             {installable && (
               <button
                 onClick={handleInstall}
                 style={{
-                  padding: '10px 18px',
-                  borderRadius: 12,
+                  padding: '12px 20px',
+                  borderRadius: 999,
                   border: 'none',
-                  background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                   color: 'white',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   fontSize: 14,
                   cursor: 'pointer',
-                  boxShadow: '0 4px 14px rgba(168,85,247,0.4)',
+                  boxShadow: '0 4px 16px rgba(99,102,241,0.4)',
                 }}
               >
                 Uygulamayı yükle
@@ -419,7 +444,7 @@ export default function App() {
         </header>
 
         {!API_BASE && !isLocal && (
-          <p style={{ color: theme === 'light' ? '#b45309' : '#fbbf24', fontSize: 13, marginBottom: 16 }}>
+          <p style={{ color: theme === 'light' ? '#b45309' : '#fbbf24', fontSize: 15, marginBottom: 20, padding: '12px 16px', borderRadius: 12, background: theme === 'light' ? 'rgba(245,158,11,0.1)' : 'rgba(251,191,36,0.1)', border: theme === 'light' ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(251,191,36,0.3)', fontWeight: 500 }}>
             Canlıda backend adresi ayarlı değil. Vercel → Environment Variables → VITE_API_URL ekleyip yeniden deploy edin.
           </p>
         )}
@@ -428,36 +453,36 @@ export default function App() {
         <section style={makeCardStyle(theme)}>
           <h2 style={makeTitleStyle(theme)}>Bağlantı ve örnek analiz</h2>
           <p style={makeDescStyle(theme)}>
-            Önce sunucunun ayakta olduğunu kontrol edin, ardından seçtiğiniz modelin örnek bir trafik üzerinde verdiği risk skorunu görün.
+            Sunucunun ayakta olduğunu kontrol edin, ardından seçtiğiniz modelin örnek trafik üzerinde verdiği risk skorunu görün.
           </p>
-          <button type="button" onClick={() => setShowHelp((h) => !h)} style={{ marginBottom: 12, padding: '8px 14px', fontSize: 12, background: colors.boxBg, border: `1px solid ${colors.inputBorder}`, borderRadius: 10, color: theme === 'light' ? '#6366f1' : '#93c5fd', cursor: 'pointer', fontWeight: 500 }}>
-            {showHelp ? 'Ne işe yarar? (kapat)' : 'Ne işe yarar?'}
+          <button type="button" onClick={() => setShowHelp((h) => !h)} style={{ marginBottom: 16, padding: '10px 16px', fontSize: 14, background: theme === 'light' ? 'rgba(99,102,241,0.08)' : 'rgba(129,140,248,0.1)', border: `1px solid ${colors.accent}33`, borderRadius: 12, color: colors.accent, cursor: 'pointer', fontWeight: 600 }}>
+            {showHelp ? 'Kapat' : 'Ne işe yarar?'}
           </button>
           {showHelp && (
-            <div style={{ marginBottom: 14, padding: 16, background: colors.boxBg, borderRadius: 12, border: `1px solid ${colors.inputBorder}`, fontSize: 13, color: colors.text, lineHeight: 1.6 }}>
-              <p style={{ margin: '0 0 8px 0' }}><strong>Bağlantıyı kontrol et:</strong> Sunucuya bir istek gider; &quot;çalışıyorum&quot; yanıtı gelirse bağlantı sağlam demektir.</p>
-              <p style={{ margin: 0 }}><strong>Örnek analiz dene:</strong> Sabit bir örnek veri modele gönderilir; dönen risk skoru modelin canlı ve çalışır durumda olduğunu gösterir.</p>
+            <div style={{ marginBottom: 18, padding: 20, background: colors.boxBg, borderRadius: 16, border: `1px solid ${colors.inputBorder}`, fontSize: 15, color: colors.text, lineHeight: 1.65, fontWeight: 500 }}>
+              <p style={{ margin: '0 0 10px 0' }}><strong>Bağlantıyı kontrol et:</strong> Sunucuya istek gider; &quot;çalışıyorum&quot; yanıtı gelirse bağlantı sağlam demektir.</p>
+              <p style={{ margin: 0 }}><strong>Örnek analiz dene:</strong> Sabit örnek veri modele gönderilir; dönen risk skoru modelin canlı olduğunu gösterir.</p>
             </div>
           )}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 20, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
             <div>
-              <button onClick={checkHealth} disabled={isChecking} style={{ padding: '10px 18px', borderRadius: 12, border: 'none', background: '#0ea5e9', color: 'white', cursor: isChecking ? 'default' : 'pointer', fontWeight: 500 }}>
+              <button onClick={checkHealth} disabled={isChecking} style={{ minWidth: 200, padding: '12px 22px', borderRadius: 14, border: 'none', background: 'linear-gradient(135deg, #0ea5e9, #0284c7)', color: 'white', cursor: isChecking ? 'default' : 'pointer', fontWeight: 600, fontSize: 15, boxShadow: '0 4px 14px rgba(14,165,233,0.35)' }}>
                 {isChecking ? 'Kontrol ediliyor...' : 'Bağlantıyı kontrol et'}
               </button>
-              <p style={{ margin: '4px 0 0 0', fontSize: 11, color: colors.textMuted, maxWidth: 220 }}>Sunucuya istek atar; yanıt &quot;ok&quot; ise API ayakta.</p>
+              <p style={{ margin: '8px 0 0 0', fontSize: 13, color: colors.textMuted, fontWeight: 600, maxWidth: 220 }}>Yanıt &quot;ok&quot; ise API ayakta.</p>
             </div>
             <div>
-              <button onClick={testScore} disabled={isScoring} style={{ padding: '10px 18px', borderRadius: 12, border: 'none', background: '#22c55e', color: 'white', cursor: isScoring ? 'default' : 'pointer', fontWeight: 500 }}>
+              <button onClick={testScore} disabled={isScoring} style={{ minWidth: 200, padding: '12px 22px', borderRadius: 14, border: 'none', background: 'linear-gradient(135deg, #059669, #047857)', color: 'white', cursor: isScoring ? 'default' : 'pointer', fontWeight: 600, fontSize: 15, boxShadow: '0 4px 14px rgba(5,150,105,0.35)' }}>
                 {isScoring ? 'Analiz ediliyor...' : 'Örnek analiz dene'}
               </button>
-              <p style={{ margin: '4px 0 0 0', fontSize: 11, color: colors.textMuted, maxWidth: 220 }}>Örnek veriyi modele gönderir; skor modelin canlı olduğunu gösterir.</p>
+              <p style={{ margin: '8px 0 0 0', fontSize: 13, color: colors.textMuted, fontWeight: 600, maxWidth: 220 }}>Skor modelin canlı olduğunu gösterir.</p>
             </div>
             <div style={{ marginLeft: 4 }}>
-              <span style={{ fontSize: 12, color: colors.textMuted, marginRight: 8 }}>Arka plan kontrolü:</span>
+              <span style={{ fontSize: 14, color: colors.textMuted, marginRight: 8, fontWeight: 600 }}>Arka plan:</span>
               <select
                 value={backgroundMode}
                 onChange={(e) => setBackgroundMode(e.target.value as 'off' | 'interval' | 'hours' | 'always')}
-                style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}`, borderRadius: 8, padding: '6px 10px', fontSize: 12 }}
+                style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}`, borderRadius: 10, padding: '8px 12px', fontSize: 14, fontWeight: 500 }}
               >
                 <option value="off">Kapalı</option>
                 <option value="interval">Her X saatte bir / günde bir</option>
@@ -469,7 +494,7 @@ export default function App() {
                   <select
                     value={checkIntervalMinutes}
                     onChange={(e) => setCheckIntervalMinutes(Number(e.target.value))}
-                    style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}`, borderRadius: 8, padding: '4px 8px', fontSize: 12 }}
+                    style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}`, borderRadius: 8, padding: '4px 8px', fontSize: 13 }}
                   >
                     <option value={60}>1 saatte bir</option>
                     <option value={180}>3 saatte bir</option>
@@ -481,14 +506,14 @@ export default function App() {
               )}
               {backgroundMode === 'hours' && (
                 <span style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <label style={{ fontSize: 12, color: colors.textMuted }}>Saat</label>
-                  <select value={hourStart} onChange={(e) => setHourStart(Number(e.target.value))} style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}`, borderRadius: 8, padding: '4px 6px', fontSize: 12 }}>
+                  <label style={{ fontSize: 15, color: colors.textMuted }}>Saat</label>
+                  <select value={hourStart} onChange={(e) => setHourStart(Number(e.target.value))} style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}`, borderRadius: 8, padding: '4px 6px', fontSize: 13 }}>
                     {Array.from({ length: 24 }, (_, i) => (
                       <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
                     ))}
                   </select>
                   <span style={{ color: colors.textMuted }}>–</span>
-                  <select value={hourEnd} onChange={(e) => setHourEnd(Number(e.target.value))} style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}`, borderRadius: 8, padding: '4px 6px', fontSize: 12 }}>
+                  <select value={hourEnd} onChange={(e) => setHourEnd(Number(e.target.value))} style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}`, borderRadius: 8, padding: '4px 6px', fontSize: 13 }}>
                     {Array.from({ length: 24 }, (_, i) => (
                       <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
                     ))}
@@ -496,12 +521,12 @@ export default function App() {
                 </span>
               )}
             </div>
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 13, color: colors.textMuted }}>Analizde kullanılacak model:</span>
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 14, color: colors.textMuted, fontWeight: 600 }}>Model:</span>
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                style={{ background: colors.inputBg, color: colors.text, borderRadius: 12, border: `1px solid ${colors.inputBorder}`, padding: '8px 12px', fontSize: 13 }}
+                style={{ background: colors.inputBg, color: colors.text, borderRadius: 12, border: `1px solid ${colors.inputBorder}`, padding: '10px 14px', fontSize: 14, fontWeight: 600 }}
               >
                 <option value="auto">Otomatik (önerilen)</option>
                 <option value="ensemble">Ensemble</option>
@@ -513,21 +538,21 @@ export default function App() {
             </div>
           </div>
           {health && (
-            <div style={{ marginTop: 12 }}>
-              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: colors.textMuted }}>Sunucu yanıtı</p>
-              <pre style={{ background: colors.preBg, color: colors.preText, padding: 12, borderRadius: 12, border: `1px solid ${colors.inputBorder}`, fontSize: 12, maxHeight: 160, overflow: 'auto', margin: 0 }}>
+            <div style={{ marginTop: 18 }}>
+              <p style={{ margin: '0 0 8px 0', fontSize: 13, color: colors.textMuted, fontWeight: 600 }}>Sunucu yanıtı</p>
+              <pre style={{ background: colors.codeSoftBg, color: colors.codeSoftText, padding: 16, borderRadius: 14, border: `1px solid ${colors.inputBorder}`, fontSize: 14, maxHeight: 160, overflow: 'auto', margin: 0, fontFamily: 'ui-monospace, monospace' }}>
                 {health}
               </pre>
             </div>
           )}
           {scores !== null && (
-            <div style={{ marginTop: 16, padding: 18, borderRadius: 14, background: theme === 'light' ? 'linear-gradient(135deg, rgba(251,207,232,0.4), rgba(219,234,254,0.4))' : 'linear-gradient(135deg, rgba(248,113,165,0.12), rgba(59,130,246,0.08))', border: theme === 'light' ? '1px solid rgba(219,39,119,0.3)' : '1px solid rgba(248,113,165,0.3)' }}>
-              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: colors.textMuted }}>Örnek analiz sonucu</p>
-              <p style={{ margin: 0, fontSize: 14, color: colors.text }}>
-                <strong>Risk skoru:</strong> {scores.map((x) => (typeof x === 'number' ? x.toFixed(4) : x)).join(', ')}
-                {usedModelName && <span style={{ color: theme === 'light' ? '#6366f1' : '#93c5fd', marginLeft: 8 }}>(model: {modelLabels[usedModelName] || usedModelName})</span>}
+            <div style={{ marginTop: 20, padding: 20, borderRadius: 18, background: theme === 'light' ? 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.06))' : 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08))', border: theme === 'light' ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(129,140,248,0.2)', borderLeft: `4px solid ${colors.accent}` }}>
+              <p style={{ margin: '0 0 8px 0', fontSize: 13, color: colors.textMuted, fontWeight: 600 }}>Örnek analiz sonucu</p>
+              <p style={{ margin: 0, fontSize: 16, color: colors.text, fontWeight: 600 }}>
+                Risk skoru: {scores.map((x) => (typeof x === 'number' ? x.toFixed(4) : x)).join(', ')}
+                {usedModelName && <span style={{ color: colors.accent, marginLeft: 10, fontWeight: 500 }}>({modelLabels[usedModelName] || usedModelName})</span>}
               </p>
-              {scoreNote && <p style={{ fontSize: 13, color: colors.text, marginTop: 8, marginBottom: 0 }}>{scoreNote}</p>}
+              {scoreNote && <p style={{ fontSize: 15, color: colors.text, marginTop: 10, marginBottom: 0, fontWeight: 500 }}>{scoreNote}</p>}
             </div>
           )}
         </section>
@@ -536,49 +561,41 @@ export default function App() {
         <section style={makeCardStyle(theme)}>
           <h2 style={makeTitleStyle(theme)}>CSV ile toplu analiz</h2>
           <p style={makeDescStyle(theme)}>
-            Eğitimde kullandığınız özellik kolonlarına uyumlu bir CSV yükleyin; seçtiğiniz model tüm satırları tarayıp anomali oranını ve skor özetini verir.
+            Özellik kolonlarına uyumlu CSV yükleyin; model tüm satırları tarayıp anomali oranı ve skor özetini verir.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 10 }}>
-            <input
-              ref={csvInputRef}
-              type="file"
-              accept=".csv"
-              style={{ fontSize: 12, color: colors.text }}
-            />
+          <p style={{ fontSize: 14, color: colors.textMuted, marginTop: -4, marginBottom: 14, fontWeight: 500 }}>Dosyalar yalnızca analiz için kullanılır, saklanmaz. En fazla 50 MB.</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center', marginBottom: 14 }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', padding: '10px 18px', borderRadius: 14, background: colors.inputBg, border: `1px solid ${colors.inputBorder}`, cursor: 'pointer', fontWeight: 600, fontSize: 14, color: colors.accent }}>
+              <input ref={csvInputRef} type="file" accept=".csv" style={{ display: 'none' }} />
+              Dosya seç
+            </label>
             <button
               onClick={analyzeCsv}
               disabled={csvLoading}
               style={{
-                padding: '8px 16px',
-                borderRadius: 12,
+                padding: '12px 22px',
+                borderRadius: 14,
                 border: 'none',
-                background: '#6366f1',
+                background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
                 color: 'white',
                 cursor: csvLoading ? 'default' : 'pointer',
-                fontSize: 13,
-                fontWeight: 500,
+                fontSize: 15,
+                fontWeight: 600,
+                boxShadow: '0 4px 16px rgba(99,102,241,0.35)',
               }}
             >
-              {csvLoading ? 'Analiz ediliyor...' : 'CSV dosyasını analiz et'}
+              {csvLoading ? 'Analiz ediliyor...' : 'CSV analiz et'}
             </button>
           </div>
           {csvError && (
-            <p style={{ color: '#f97373', fontSize: 12, marginTop: 4 }}>{csvError}</p>
+            <p style={{ color: colors.danger, fontSize: 14, marginTop: 8, padding: '10px 14px', borderRadius: 12, background: theme === 'light' ? 'rgba(220,38,38,0.08)' : 'rgba(220,38,38,0.15)', fontWeight: 500 }}>{csvError}</p>
           )}
           {csvSummary && (
-            <div style={{ marginTop: 10, padding: 14, borderRadius: 12, background: colors.boxBg, border: `1px solid ${colors.inputBorder}`, fontSize: 13, color: colors.text }}>
-              <p style={{ margin: '0 0 4px 0' }}>
-                <strong>Model:</strong> {csvSummary.model in modelLabels ? modelLabels[csvSummary.model] : csvSummary.model}
-              </p>
-              <p style={{ margin: '0 0 4px 0' }}>
-                <strong>Toplam satır:</strong> {csvSummary.total_rows}
-              </p>
-              <p style={{ margin: '0 0 4px 0' }}>
-                <strong>Anomali sayısı:</strong> {csvSummary.anomaly_count} ({(csvSummary.anomaly_ratio * 100).toFixed(2)}%)
-              </p>
-              <p style={{ margin: 0 }}>
-                <strong>Skor aralığı:</strong> min {csvSummary.score_min.toFixed(4)} · ort {csvSummary.score_mean.toFixed(4)} · max {csvSummary.score_max.toFixed(4)}
-              </p>
+            <div style={{ marginTop: 16, padding: 20, borderRadius: 16, background: colors.boxBg, border: `1px solid ${colors.inputBorder}`, borderLeft: `4px solid ${colors.accent}`, fontSize: 15, color: colors.text, fontWeight: 500 }}>
+              <p style={{ margin: '0 0 6px 0' }}><strong>Model:</strong> {csvSummary.model in modelLabels ? modelLabels[csvSummary.model] : csvSummary.model}</p>
+              <p style={{ margin: '0 0 6px 0' }}><strong>Toplam satır:</strong> {csvSummary.total_rows}</p>
+              <p style={{ margin: '0 0 6px 0' }}><strong>Anomali:</strong> {csvSummary.anomaly_count} ({(csvSummary.anomaly_ratio * 100).toFixed(2)}%)</p>
+              <p style={{ margin: 0 }}><strong>Skor:</strong> min {csvSummary.score_min.toFixed(4)} · ort {csvSummary.score_mean.toFixed(4)} · max {csvSummary.score_max.toFixed(4)}</p>
             </div>
           )}
         </section>
@@ -589,47 +606,39 @@ export default function App() {
           <p style={makeDescStyle(theme)}>
             Wireshark veya benzeri araçlarla kaydettiğiniz `.pcap` / `.pcapng` dosyasını yükleyin; akış bazında anomali oranı ve skor özeti hesaplanır.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 10 }}>
-            <input
-              ref={pcapInputRef}
-              type="file"
-              accept=".pcap,.pcapng"
-              style={{ fontSize: 12, color: colors.text }}
-            />
+          <p style={{ fontSize: 14, color: colors.textMuted, marginTop: -4, marginBottom: 14, fontWeight: 500 }}>Dosyalar yalnızca analiz için kullanılır, saklanmaz. En fazla 50 MB.</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center', marginBottom: 14 }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', padding: '10px 18px', borderRadius: 14, background: colors.inputBg, border: `1px solid ${colors.inputBorder}`, cursor: 'pointer', fontWeight: 600, fontSize: 14, color: '#0ea5e9' }}>
+              <input ref={pcapInputRef} type="file" accept=".pcap,.pcapng" style={{ display: 'none' }} />
+              PCAP seç
+            </label>
             <button
               onClick={analyzePcap}
               disabled={pcapLoading}
               style={{
-                padding: '8px 16px',
-                borderRadius: 12,
+                padding: '12px 22px',
+                borderRadius: 14,
                 border: 'none',
-                background: '#0ea5e9',
+                background: 'linear-gradient(135deg, #0ea5e9, #0284c7)',
                 color: 'white',
                 cursor: pcapLoading ? 'default' : 'pointer',
-                fontSize: 13,
-                fontWeight: 500,
+                fontSize: 15,
+                fontWeight: 600,
+                boxShadow: '0 4px 16px rgba(14,165,233,0.35)',
               }}
             >
-              {pcapLoading ? 'Analiz ediliyor...' : 'PCAP dosyasını analiz et'}
+              {pcapLoading ? 'Analiz ediliyor...' : 'PCAP analiz et'}
             </button>
           </div>
           {pcapError && (
-            <p style={{ color: '#f97373', fontSize: 12, marginTop: 4 }}>{pcapError}</p>
+            <p style={{ color: colors.danger, fontSize: 14, marginTop: 8, padding: '10px 14px', borderRadius: 12, background: theme === 'light' ? 'rgba(220,38,38,0.08)' : 'rgba(220,38,38,0.15)', fontWeight: 500 }}>{pcapError}</p>
           )}
           {pcapSummary && (
-            <div style={{ marginTop: 10, padding: 14, borderRadius: 12, background: colors.boxBg, border: `1px solid ${colors.inputBorder}`, fontSize: 13, color: colors.text }}>
-              <p style={{ margin: '0 0 4px 0' }}>
-                <strong>Model:</strong> {pcapSummary.model in modelLabels ? modelLabels[pcapSummary.model] : pcapSummary.model}
-              </p>
-              <p style={{ margin: '0 0 4px 0' }}>
-                <strong>Toplam flow:</strong> {pcapSummary.total_rows}
-              </p>
-              <p style={{ margin: '0 0 4px 0' }}>
-                <strong>Anomali sayısı:</strong> {pcapSummary.anomaly_count} ({(pcapSummary.anomaly_ratio * 100).toFixed(2)}%)
-              </p>
-              <p style={{ margin: 0 }}>
-                <strong>Skor aralığı:</strong> min {pcapSummary.score_min.toFixed(4)} · ort {pcapSummary.score_mean.toFixed(4)} · max {pcapSummary.score_max.toFixed(4)}
-              </p>
+            <div style={{ marginTop: 16, padding: 20, borderRadius: 16, background: colors.boxBg, border: `1px solid ${colors.inputBorder}`, borderLeft: '4px solid #0ea5e9', fontSize: 15, color: colors.text, fontWeight: 500 }}>
+              <p style={{ margin: '0 0 6px 0' }}><strong>Model:</strong> {pcapSummary.model in modelLabels ? modelLabels[pcapSummary.model] : pcapSummary.model}</p>
+              <p style={{ margin: '0 0 6px 0' }}><strong>Toplam flow:</strong> {pcapSummary.total_rows}</p>
+              <p style={{ margin: '0 0 6px 0' }}><strong>Anomali:</strong> {pcapSummary.anomaly_count} ({(pcapSummary.anomaly_ratio * 100).toFixed(2)}%)</p>
+              <p style={{ margin: 0 }}><strong>Skor:</strong> min {pcapSummary.score_min.toFixed(4)} · ort {pcapSummary.score_mean.toFixed(4)} · max {pcapSummary.score_max.toFixed(4)}</p>
             </div>
           )}
         </section>
@@ -638,17 +647,17 @@ export default function App() {
         <section style={makeCardStyle(theme)}>
           <h2 style={makeTitleStyle(theme)}>Kendi bilgisayarınızda canlı analiz</h2>
           <p style={makeDescStyle(theme)}>
-            Kendi bilgisayarınızda sensörü çalıştırarak ağ trafiğinizi canlı izleyebilirsiniz. Şüpheli akışlar konsolda uyarı olarak gösterilir; durdurmak için Ctrl+C yeterli.
+            Sensörü çalıştırarak ağ trafiğinizi canlı izleyin. Şüpheli akışlar uyarı olarak gösterilir; durdurmak için Ctrl+C.
           </p>
-          <div style={{ background: colors.boxBg, padding: 18, borderRadius: 14, border: `1px solid ${colors.inputBorder}`, fontSize: 13, color: colors.text, lineHeight: 1.7 }}>
-            <p style={{ margin: '0 0 10px 0', fontWeight: 600 }}>Nasıl yapılır?</p>
-            <ol style={{ margin: 0, paddingLeft: 20 }}>
+          <div style={{ background: colors.boxBg, padding: 22, borderRadius: 18, border: `1px solid ${colors.inputBorder}`, borderLeft: `4px solid ${colors.accent}`, fontSize: 15, color: colors.text, lineHeight: 1.7, fontWeight: 500 }}>
+            <p style={{ margin: '0 0 12px 0', fontWeight: 700, fontSize: 16, color: colors.accent }}>Nasıl yapılır?</p>
+            <ol style={{ margin: 0, paddingLeft: 22 }}>
               <li>PowerShell veya terminali <strong>Yönetici olarak</strong> açın.</li>
-              <li>Proje klasörüne gidip sanal ortamı açın: <code style={{ background: colors.preBg, color: colors.preText, padding: '2px 8px', borderRadius: 6, fontSize: 12 }}>.\venv\Scripts\activate</code></li>
-              <li>Şu komutu çalıştırın: <code style={{ background: colors.preBg, color: colors.preText, padding: '2px 8px', borderRadius: 6, fontSize: 12 }}>python realtime_nids_scapy.py</code></li>
+              <li>Proje klasöründe sanal ortamı açın: <code style={{ background: colors.codeSoftBg, color: colors.codeSoftText, padding: '4px 10px', borderRadius: 8, fontSize: 14, fontFamily: 'ui-monospace, monospace' }}>.\venv\Scripts\activate</code></li>
+              <li>Çalıştırın: <code style={{ background: colors.codeSoftBg, color: colors.codeSoftText, padding: '4px 10px', borderRadius: 8, fontSize: 14, fontFamily: 'ui-monospace, monospace' }}>python realtime_nids_scapy.py</code></li>
             </ol>
-            <p style={{ margin: '14px 0 0 0', fontSize: 12, color: colors.textMuted }}>
-              Normal trafikte az uyarı, gerçekten sıra dışı akışlarda daha fazla uyarı görürsünüz.
+            <p style={{ margin: '16px 0 0 0', fontSize: 14, color: colors.textMuted }}>
+              Normal trafikte az uyarı, sıra dışı akışlarda daha fazla uyarı görürsünüz.
             </p>
           </div>
         </section>
@@ -660,72 +669,124 @@ export default function App() {
             Sunucuda yüklü modeller ve (karşılaştırma çalıştırıldıysa) doğruluk, F1, hassasiyet gibi metrikler aşağıda.
           </p>
           {apiModels && (
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
-              <span style={{ color: theme === 'light' ? '#6366f1' : '#c4b5fd', fontSize: 13 }}>Yüklü: {apiModels.models.length ? apiModels.models.map((m) => modelLabels[m] || m).join(', ') : 'yok'}</span>
-              {apiModels.ensemble_available && <span style={{ padding: '4px 10px', borderRadius: 999, background: theme === 'light' ? 'rgba(99,102,241,0.15)' : 'rgba(167,139,250,0.2)', border: theme === 'light' ? '1px solid rgba(99,102,241,0.4)' : '1px solid rgba(167,139,250,0.5)', fontSize: 12, color: colors.text }}>Ensemble kullanılabilir</span>}
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
+              <span style={{ color: colors.accent, fontSize: 14, fontWeight: 700 }}>Yüklü: {apiModels.models.length ? apiModels.models.map((m) => modelLabels[m] || m).join(', ') : 'yok'}</span>
+              {apiModels.ensemble_available && <span style={{ padding: '6px 14px', borderRadius: 999, background: theme === 'light' ? 'rgba(99,102,241,0.12)' : 'rgba(129,140,248,0.2)', border: `1px solid ${colors.accent}55`, fontSize: 14, fontWeight: 700, color: colors.accent }}>Ensemble kullanılabilir</span>}
             </div>
           )}
           {comparison?.available && comparison.rows?.length > 0 ? (
-            <div style={{ overflowX: 'auto', borderRadius: 14, border: `1px solid ${colors.inputBorder}`, background: colors.boxBg, marginBottom: 14 }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <>
+              <div style={{ marginBottom: 20, padding: 20, borderRadius: 18, background: colors.boxBg, border: `1px solid ${colors.inputBorder}` }}>
+                <p style={{ margin: '0 0 14px 0', fontSize: 15, fontWeight: 700, color: colors.accent }}>F1 skoru karşılaştırması</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {comparison.rows.map((row: Record<string, unknown>, i: number) => {
+                    const f1 = typeof row.f1 === 'number' ? row.f1 : 0;
+                    const pct = Math.min(100, Math.round(f1 * 100));
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <span style={{ width: 160, fontSize: 14, fontWeight: 600, color: colors.text, flexShrink: 0 }}>{modelLabels[String(row.model)] || String(row.model)}</span>
+                        <div style={{ flex: 1, height: 24, background: theme === 'light' ? '#e2e8f0' : 'rgba(51,65,85,0.6)', borderRadius: 12, overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', background: theme === 'light' ? 'linear-gradient(90deg, #6366f1, #8b5cf6)' : 'linear-gradient(90deg, #818cf8, #a78bfa)', borderRadius: 12, transition: 'width 0.4s ease' }} />
+                        </div>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: colors.text, width: 48, textAlign: 'right' }}>{(f1 * 100).toFixed(1)}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            <div style={{ overflowX: 'auto', borderRadius: 18, border: `1px solid ${colors.inputBorder}`, background: colors.boxBg, marginBottom: 18 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                 <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: '12px 14px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>Model</th>
-                    <th style={{ textAlign: 'right', padding: '12px 14px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>Accuracy</th>
-                    <th style={{ textAlign: 'right', padding: '12px 14px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>F1</th>
-                    <th style={{ textAlign: 'right', padding: '12px 14px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>Recall</th>
-                    <th style={{ textAlign: 'right', padding: '12px 14px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>Precision</th>
-                    <th style={{ textAlign: 'right', padding: '12px 14px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>ROC-AUC</th>
-                    <th style={{ textAlign: 'right', padding: '12px 14px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>FPR</th>
+                  <tr style={{ background: theme === 'light' ? 'rgba(99,102,241,0.08)' : 'rgba(99,102,241,0.12)' }}>
+                    <th style={{ textAlign: 'left', padding: '14px 18px', color: colors.accent, fontWeight: 700 }}>Model</th>
+                    <th style={{ textAlign: 'right', padding: '14px 18px', color: colors.accent, fontWeight: 700 }}>Accuracy</th>
+                    <th style={{ textAlign: 'right', padding: '14px 18px', color: colors.accent, fontWeight: 700 }}>F1</th>
+                    <th style={{ textAlign: 'right', padding: '14px 18px', color: colors.accent, fontWeight: 700 }}>Recall</th>
+                    <th style={{ textAlign: 'right', padding: '14px 18px', color: colors.accent, fontWeight: 700 }}>Precision</th>
+                    <th style={{ textAlign: 'right', padding: '14px 18px', color: colors.accent, fontWeight: 700 }}>ROC-AUC</th>
+                    <th style={{ textAlign: 'right', padding: '14px 18px', color: colors.accent, fontWeight: 700 }}>FPR</th>
                   </tr>
                 </thead>
                 <tbody>
                   {comparison.rows.map((row: Record<string, unknown>, i: number) => (
-                    <tr key={i}>
-                      <td style={{ padding: '10px 14px', color: colors.text }}>{modelLabels[String(row.model)] || String(row.model)}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: colors.textMuted }}>{typeof row.accuracy === 'number' ? (row.accuracy as number).toFixed(4) : '—'}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: colors.textMuted }}>{typeof row.f1 === 'number' ? (row.f1 as number).toFixed(4) : '—'}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: colors.textMuted }}>{typeof row.recall === 'number' ? (row.recall as number).toFixed(4) : '—'}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: colors.textMuted }}>{typeof row.precision === 'number' ? (row.precision as number).toFixed(4) : '—'}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: colors.textMuted }}>{typeof row.roc_auc === 'number' ? (row.roc_auc as number).toFixed(4) : '—'}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: colors.textMuted }}>{typeof row.false_positive_rate === 'number' ? (row.false_positive_rate as number).toFixed(4) : '—'}</td>
+                    <tr key={i} style={{ background: i % 2 === 1 ? (theme === 'light' ? 'rgba(248,250,252,0.8)' : 'rgba(255,255,255,0.02)') : 'transparent' }}>
+                      <td style={{ padding: '12px 18px', color: colors.text, fontWeight: 600 }}>{modelLabels[String(row.model)] || String(row.model)}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'right', color: colors.textMuted }}>{typeof row.accuracy === 'number' ? (row.accuracy as number).toFixed(4) : '—'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'right', color: colors.textMuted }}>{typeof row.f1 === 'number' ? (row.f1 as number).toFixed(4) : '—'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'right', color: colors.textMuted }}>{typeof row.recall === 'number' ? (row.recall as number).toFixed(4) : '—'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'right', color: colors.textMuted }}>{typeof row.precision === 'number' ? (row.precision as number).toFixed(4) : '—'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'right', color: colors.textMuted }}>{typeof row.roc_auc === 'number' ? (row.roc_auc as number).toFixed(4) : '—'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'right', color: colors.textMuted }}>{typeof row.false_positive_rate === 'number' ? (row.false_positive_rate as number).toFixed(4) : '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            </>
           ) : (
-            <div style={{ background: colors.boxBg, padding: 14, borderRadius: 12, border: `1px solid ${colors.inputBorder}`, fontSize: 13, color: colors.textMuted, marginBottom: 14 }}>
-              Karşılaştırma verisi yok. Lokalde proje kökünde: <code style={{ display: 'block', marginTop: 6, background: colors.preBg, color: colors.preText, padding: '8px 10px', borderRadius: 8 }}>python scripts\experiements\compare_core_models.py</code>
+            <div style={{ background: colors.boxBg, padding: 18, borderRadius: 16, border: `1px solid ${colors.inputBorder}`, fontSize: 15, color: colors.textMuted, marginBottom: 18, fontWeight: 500 }}>
+              Karşılaştırma verisi yok. Lokalde: <code style={{ display: 'block', marginTop: 8, background: colors.codeSoftBg, color: colors.codeSoftText, padding: '10px 14px', borderRadius: 10, fontFamily: 'ui-monospace, monospace' }}>python scripts\experiments\compare_core_models.py</code>
               Sonra backend&#39;i yeniden başlatıp sayfayı yenileyin.
             </div>
           )}
-          <div style={{ marginBottom: 14, padding: 14, borderRadius: 12, background: theme === 'light' ? 'rgba(99,102,241,0.08)' : 'rgba(59,130,246,0.08)', border: theme === 'light' ? '1px solid rgba(99,102,241,0.25)' : '1px solid rgba(59,130,246,0.25)', fontSize: 12, color: colors.text, lineHeight: 1.55 }}>
-            <strong style={{ color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>Metrikleri nasıl okursunuz?</strong> F1 ve Accuracy yüksek (örn. &gt;0,7), FPR düşükse model güvenilir sayılır. ROC-AUC 1&#39;e yakınsa anomali ile normal trafiği iyi ayırıyor demektir.
+          <div style={{ marginBottom: 18, padding: 18, borderRadius: 16, background: theme === 'light' ? 'rgba(99,102,241,0.06)' : 'rgba(99,102,241,0.1)', border: `1px solid ${colors.accent}33`, fontSize: 15, color: colors.text, lineHeight: 1.6, fontWeight: 500 }}>
+            <strong style={{ color: colors.accent }}>Metrikleri nasıl okursunuz?</strong> F1 ve Accuracy yüksek (örn. &gt;0,7), FPR düşükse model güvenilir. ROC-AUC 1&#39;e yakınsa anomali ile normal trafiği iyi ayırıyor demektir.
           </div>
-          <div style={{ overflowX: 'auto', borderRadius: 12, border: `1px solid ${colors.inputBorder}`, background: colors.boxBg }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <div style={{ overflowX: 'auto', borderRadius: 16, border: `2px solid ${colors.inputBorder}`, background: colors.boxBg }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
               <thead>
-                <tr>
-                  <th style={{ textAlign: 'left', padding: '10px 12px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>Model</th>
-                  <th style={{ textAlign: 'left', padding: '10px 12px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>Sunucu durumu</th>
+                <tr style={{ background: theme === 'light' ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.15)', borderBottom: `2px solid ${colors.inputBorder}` }}>
+                  <th style={{ textAlign: 'left', padding: '14px 18px', color: colors.accent, fontWeight: 800, fontSize: 15 }}>Model</th>
+                  <th style={{ textAlign: 'left', padding: '14px 18px', color: colors.accent, fontWeight: 800, fontSize: 15 }}>Sunucu durumu</th>
                 </tr>
               </thead>
               <tbody>
-                {['standard_ae', 'isolation_forest', 'one_class_svm', 'lstm_ae', 'ensemble'].map((key) => (
-                  <tr key={key}>
-                    <td style={{ padding: '10px 12px', color: colors.text }}>{modelLabels[key] || key}</td>
-                    <td style={{ padding: '10px 12px' }}>
+                {['standard_ae', 'isolation_forest', 'one_class_svm', 'lstm_ae', 'ensemble'].map((key, i) => (
+                  <tr key={key} style={{ background: i % 2 === 1 ? (theme === 'light' ? 'rgba(248,250,252,0.8)' : 'rgba(255,255,255,0.03)') : 'transparent', borderBottom: `1px solid ${colors.inputBorder}` }}>
+                    <td style={{ padding: '14px 18px', color: colors.text, fontWeight: 700, fontSize: 15 }}>{modelLabels[key] || key}</td>
+                    <td style={{ padding: '14px 18px', fontSize: 15, fontWeight: 600 }}>
                       {key === 'ensemble' ? (
-                        apiModels?.ensemble_available ? <span style={{ color: '#059669' }}>Kullanılabilir</span> : <span style={{ color: colors.textMuted }}>En az bir model gerekli</span>
+                        apiModels?.ensemble_available ? <span style={{ color: colors.success }}>Kullanılabilir</span> : <span style={{ color: colors.textMuted }}>En az bir model gerekli</span>
                       ) : (
-                        apiModels?.models?.includes(key) ? <span style={{ color: '#059669' }}>Yüklü</span> : <span style={{ color: colors.textMuted }}>Yok</span>
+                        apiModels?.models?.includes(key) ? <span style={{ color: colors.success }}>Yüklü</span> : <span style={{ color: colors.textMuted }}>Yok</span>
                       )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </section>
+
+        {/* Sona: Nasıl indirilir ve çalıştırılır */}
+        <section style={makeCardStyle(theme)}>
+          <h2 style={makeTitleStyle(theme)}>Nasıl indirilir ve çalıştırılır?</h2>
+          <p style={makeDescStyle(theme)}>
+            Projeyi bilgisayarınıza indirip yerelde çalıştırmak veya sadece bu sayfayı kullanmak için aşağıdaki adımları takip edin.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginTop: 8 }}>
+            <div style={{ padding: 20, borderRadius: 16, background: theme === 'light' ? 'rgba(99,102,241,0.06)' : 'rgba(99,102,241,0.1)', border: `1px solid ${colors.accent}33`, borderLeft: `4px solid ${colors.accent}` }}>
+              <p style={{ margin: '0 0 12px 0', fontWeight: 800, fontSize: 16, color: colors.accent }}>İndirme</p>
+              <ol style={{ margin: 0, paddingLeft: 20, lineHeight: 1.8, fontSize: 14, color: colors.text, fontWeight: 600 }}>
+                <li><strong>Git:</strong> <code style={{ background: colors.codeSoftBg, color: colors.codeSoftText, padding: '3px 8px', borderRadius: 8, fontSize: 13 }}>git clone https://github.com/Ebrarbulut/b2.git</code></li>
+                <li><strong>ZIP:</strong> GitHub sayfasında Code → Download ZIP, açıp klasöre girin.</li>
+                <li>İndirdikten sonra klasör içinde terminal açın (örn. <code style={{ background: colors.codeSoftBg, color: colors.codeSoftText, padding: '3px 8px', borderRadius: 8, fontSize: 13 }}>cd b2</code>).</li>
+              </ol>
+            </div>
+            <div style={{ padding: 20, borderRadius: 16, background: theme === 'light' ? 'rgba(5,150,105,0.06)' : 'rgba(5,150,105,0.1)', border: `1px solid ${colors.success}44`, borderLeft: `4px solid ${colors.success}` }}>
+              <p style={{ margin: '0 0 12px 0', fontWeight: 800, fontSize: 16, color: colors.success }}>Çalıştırma</p>
+              <ol style={{ margin: 0, paddingLeft: 20, lineHeight: 1.8, fontSize: 14, color: colors.text, fontWeight: 600 }}>
+                <li><strong>Backend:</strong> <code style={{ background: colors.codeSoftBg, color: colors.codeSoftText, padding: '3px 8px', borderRadius: 8, fontSize: 13 }}>cd backend</code> → <code style={{ background: colors.codeSoftBg, color: colors.codeSoftText, padding: '3px 8px', borderRadius: 8, fontSize: 13 }}>pip install -r requirements.txt</code> → <code style={{ background: colors.codeSoftBg, color: colors.codeSoftText, padding: '3px 8px', borderRadius: 8, fontSize: 13 }}>uvicorn main:app --host 0.0.0.0 --port 8000</code></li>
+                <li><strong>Frontend:</strong> Yeni terminalde <code style={{ background: colors.codeSoftBg, color: colors.codeSoftText, padding: '3px 8px', borderRadius: 8, fontSize: 13 }}>cd frontend</code> → <code style={{ background: colors.codeSoftBg, color: colors.codeSoftText, padding: '3px 8px', borderRadius: 8, fontSize: 13 }}>npm install</code> → <code style={{ background: colors.codeSoftBg, color: colors.codeSoftText, padding: '3px 8px', borderRadius: 8, fontSize: 13 }}>npm run dev</code></li>
+                <li>Tarayıcıda <strong>http://localhost:5173</strong> açın. Backend 8000 portunda çalışıyor olmalı.</li>
+              </ol>
+            </div>
+            <div style={{ padding: 20, borderRadius: 16, background: theme === 'light' ? 'rgba(14,165,233,0.06)' : 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.3)', borderLeft: '4px solid #0ea5e9' }}>
+              <p style={{ margin: '0 0 12px 0', fontWeight: 800, fontSize: 16, color: '#0ea5e9' }}>Canlı NIDS (.exe)</p>
+              <p style={{ margin: 0, fontSize: 14, color: colors.text, lineHeight: 1.7, fontWeight: 600 }}>
+                Proje klasöründe <code style={{ background: colors.codeSoftBg, color: colors.codeSoftText, padding: '3px 8px', borderRadius: 8, fontSize: 13 }}>scripts\build_nad_sensor_exe.bat</code> çalıştırın. Oluşan <code style={{ background: colors.codeSoftBg, color: colors.codeSoftText, padding: '3px 8px', borderRadius: 8, fontSize: 13 }}>dist\nad_sensor.exe</code> dosyasına çift tıklayarak sensörü (terminal açılmadan) çalıştırabilirsiniz. Yönetici izni gerekebilir.
+              </p>
+            </div>
           </div>
         </section>
       </div>

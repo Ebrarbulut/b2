@@ -14,7 +14,7 @@ module.exports = defineConfig({
         start_url: '/',
         display: 'standalone',
         background_color: '#0f172a',
-        theme_color: '#0ea5e9',
+        theme_color: '#a855f7',
         icons: [
           {
             src: '/favicon.svg',

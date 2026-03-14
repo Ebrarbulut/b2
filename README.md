@@ -38,6 +38,19 @@ A machine learning-based network intrusion detection system using autoencoders (
 - Zeek (for PCAP processing)
 - See `requirements.txt` for full dependencies
 
+## 📥 Nasıl indirilir (How to download)
+
+- **Git ile (önerilen):** Bilgisayarında Git kuruluysa:
+  ```bash
+  git clone https://github.com/Ebrarbulut/b2.git
+  cd b2
+  ```
+- **ZIP ile:** GitHub sayfasında yeşil **Code** → **Download ZIP** ile indir, aç, klasör adı genelde `b2-main` olur; terminalde bu klasöre gir (`cd b2-main`).
+
+İndirdikten sonra kurulum adımlarına (sanal ortam, bağımlılıklar, isteğe bağlı veri setleri) geçebilirsin.
+
+---
+
 ## 🚀 Kurulum (Installation)
 
 1. Clone the repository:
@@ -154,10 +167,66 @@ streamlit run streamlit_app.py
 
 Bu komut çalıştıktan sonra tarayıcıda genellikle `http://localhost:8501` adresinden arayüze erişebilirsiniz.
 
+### 5. PWA + API ile çalıştırma (önerilen)
+
+**Backend (API):**
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Frontend (React PWA):** Başka bir terminalde:
+```bash
+cd frontend
+npm install
+echo "VITE_API_URL=http://localhost:8000" > .env
+npm run dev
+```
+Tarayıcıda `http://localhost:5173` adresini açın. Bağlantıyı kontrol et, örnek analiz, CSV/PCAP yükleme ve model karşılaştırma bu arayüzden yapılır.
+
+**Canlı NIDS (isteğe bağlı):** PowerShell’i **Yönetici olarak** açıp:
+```bash
+cd B2
+.\venv\Scripts\activate
+python realtime_nids_scapy.py
+```
+
+### 6. Canlı NIDS’i .exe olarak derleme (PowerShell açık kalmadan çalışır)
+
+- **Derleme:** Proje klasöründe:
+  ```bash
+  scripts\build_nad_sensor_exe.bat
+  ```
+  Çıktı: `dist\nad_sensor.exe`.
+
+- **Çalıştırma:** `dist\nad_sensor.exe` dosyasına çift tıklayabilir veya kısayol oluşturabilirsin. **PowerShell veya terminal penceresi açılmaz;** uygulama arka planda çalışır. İlk çalıştırmada Windows “Yönetici olarak çalıştır” isteyebilir (paket dinleme yetkisi için).
+
+- **Log:** Durum ve uyarılar `nad_sensor.log` dosyasına yazılır (.exe’nin bulunduğu klasörde veya çalışma dizininde). Takibi oradan yapabilirsin; PowerShell’i sürekli açık tutmana gerek yok.
+
 Compare model performance:
 ```bash
 python scripts/experiments/compare_all_models.py
 ```
+
+### 7. Testleri çalıştırma
+
+Proje kökünden (backend’e gerek yok, TestClient kullanılır). Sanal ortam kullanıyorsan önce `venv\Scripts\activate` ile aktive edip bağımlılıkları yükleyin:
+```bash
+pip install -r requirements.txt
+python -m pytest tests/ -v
+```
+Veya script ile: **Windows** `scripts\run_tests.bat`, **Linux/macOS** `bash scripts/run_tests.sh`.  
+`tests/test_api_health_score.py` ve `tests/test_analyze_csv_pcap.py` API sağlık, skor ve CSV/PCAP analiz uç noktalarını test eder.
+
+### 8. Piyasaya sürüm / yayına hazırlık
+
+- **API:** Rate limiting açık (IP başına dakikada 60 istek `/api/*`, 120 istek `/health`); 429 yanıtında “Çok fazla istek” mesajı.
+- **Frontend:** Açık/koyu tema, okunaklı yazı boyutu ve kalınlık, CSV/PCAP 50 MB limiti, gizlilik notu.
+- **Canlı NIDS:** `.exe` ile terminal açılmadan çalışma, log dosyası.
+- **Dokümantasyon:** Kurulum, indirme, kullanım ve gizlilik README’de; detaylı analiz `PROJE_DURUM_VE_ANALIZ.md` içinde.
+
+**Bitirme raporu:** Proje kökünde `BITIRME_RAPORU_TASLAK.md` dosyası rapor taslağı içerir; bölümleri doldurup 20–30 sayfaya çıkarabilirsiniz.
 
 ## 📁 Proje Yapısı (Project Structure)
 
@@ -228,6 +297,7 @@ The system evaluates models using:
 
 ## 🛡️ Security Considerations
 
+- **Veri ve gizlilik:** Web arayüzünde yüklediğiniz CSV/PCAP dosyaları yalnızca analiz sırasında işlenir; sunucuda kalıcı olarak saklanmaz. İstek sonrası yanıt üretilir ve dosya bellekten atılır.
 - **Data Privacy**: Ensure all network captures comply with privacy regulations
 - **Authorized Testing**: Only analyze traffic from networks you own or have permission to monitor
 - **Model Security**: Trained models may contain sensitive information about your network topology

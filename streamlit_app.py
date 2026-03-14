@@ -242,7 +242,7 @@ python scripts/merge_and_label_logs.py
 python scripts/data_pipeline/advanced_features.py
 
 # 3. Modelleri eğit ve test et
-python scripts/experiements/compare_all_models.py
+python scripts/experiments/compare_all_models.py
 ```
 """
         )
@@ -440,7 +440,7 @@ def page_autoencoder_overview():
 Autoencoder ve diğer modellerin performansını görmek için:
 
 ```bash
-python scripts/experiements/compare_all_models.py
+python scripts/experiments/compare_all_models.py
 ```
 
 Bu komut:
@@ -478,7 +478,7 @@ python scripts/merge_and_label_logs.py
 python scripts/data_pipeline/advanced_features.py
 
 # 3. Tüm modelleri karşılaştır (Autoencoder dahil)
-python scripts/experiements/compare_all_models.py
+python scripts/experiments/compare_all_models.py
 
 # 4. Streamlit arayüzünü aç
 streamlit run streamlit_app.py
@@ -567,7 +567,7 @@ yaklaşımını merkeze almanın neden önemli olduğunu gösteriyor.
     else:
         cols[1].info(
             "Cross‑day CICIDS raporu bulunamadı. "
-            "`python scripts/experiements/cicids2017_cross_day.py` komutunu çalıştır."
+            "`python scripts/experiments/cicids2017_cross_day.py` komutunu çalıştır."
         )
 
 

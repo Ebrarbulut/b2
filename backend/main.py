@@ -2,7 +2,10 @@
 PWA / API için FastAPI backend.
 Model yüklüyse skor döner, değilse sağlık kontrolü ve demo skor.
 """
+import os
 import sys
+import time
+from collections import defaultdict
 from pathlib import Path
 
 # Proje kökünü path'e ekle (backend klasörünün bir üstü)
@@ -10,15 +13,16 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse
 from typing import List, Optional
 
 app = FastAPI(title="Network Anomaly Detection API", version="1.0.0")
 
 # CORS: canlıda frontend adresini ekle (örn. Vercel: https://xxx.vercel.app)
-import os
 _cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -28,8 +32,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Rate limiting: IP başına istek sayısı (piyasa için kötüye kullanımı sınırlar)
+_RATE_LIMIT_WINDOW = 60  # saniye
+_RATE_LIMIT_HEALTH = 120  # /health için dakikada max istek
+_RATE_LIMIT_API = 60     # /api/* için dakikada max istek
+_rate_store: dict[str, list[float]] = defaultdict(list)
+
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        client = request.client.host if request.client else "unknown"
+        path = request.url.path
+        now = time.time()
+        # Eski kayıtları temizle
+        _rate_store[client] = [t for t in _rate_store[client] if now - t < _RATE_LIMIT_WINDOW]
+        limit = _RATE_LIMIT_HEALTH if path == "/health" else _RATE_LIMIT_API
+        if len(_rate_store[client]) >= limit:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Çok fazla istek. Lütfen biraz bekleyin."},
+            )
+        _rate_store[client].append(now)
+        return await call_next(request)
+
+
+app.add_middleware(RateLimitMiddleware)
+
 MODELS_DIR = ROOT / "models"
 OUTPUTS_DIR = ROOT / "outputs"
+
+# Yüklenen dosya boyutu üst sınırı (50 MB)
+MAX_UPLOAD_BYTES = 50 * 1024 * 1024
 
 # Model cache (ilk istekte yüklenecek)
 _detectors_cache = {}
@@ -359,6 +392,8 @@ async def analyze_csv(file: UploadFile = File(...), model: Optional[str] = Form(
   raw = await file.read()
   if not raw:
       raise HTTPException(status_code=400, detail="Dosya boş")
+  if len(raw) > MAX_UPLOAD_BYTES:
+      raise HTTPException(status_code=413, detail=f"Dosya boyutu en fazla {MAX_UPLOAD_BYTES // (1024*1024)} MB olabilir")
 
   try:
       import pandas as pd
@@ -433,6 +468,8 @@ async def analyze_pcap(file: UploadFile = File(...), model: Optional[str] = Form
     raw = await file.read()
     if not raw:
         raise HTTPException(status_code=400, detail="Dosya boş")
+    if len(raw) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail=f"Dosya boyutu en fazla {MAX_UPLOAD_BYTES // (1024*1024)} MB olabilir")
 
     try:
         import numpy as np

@@ -35,13 +35,16 @@ Frontend (PWA) ve backend’i internette yayınlamak için aşağıdaki adımlar
    - **Runtime:** Python 3.  
    - **Build Command:**  
      ```bash
-     pip install -r requirements.txt && pip install fastapi uvicorn
+     pip install -r backend/requirements.txt
      ```  
+     (Proje kökündeki `requirements.txt` ile de çalışır; backend için `backend/requirements.txt` önerilir.)  
    - **Start Command:**  
      ```bash
      uvicorn backend.main:app --host 0.0.0.0 --port $PORT
      ```  
-   - **Instance type:** Free.
+   - **Instance type:** Free.  
+
+   **Alternatif:** Repoda `render.yaml` var; Render Dashboard’da **New → Blueprint** ile repoyu seçip bu dosyayı kullanarak da servisi oluşturabilirsin.
 
 6. **Environment variables (opsiyonel)**  
    - **CORS_ORIGINS:** İlk etapta boş bırakabilirsin; frontend’i deploy ettikten sonra Vercel’in verdiği adresi buraya ekleyeceksin (örn. `https://nad-pwa.vercel.app`).

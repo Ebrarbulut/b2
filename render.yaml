@@ -1,0 +1,14 @@
+# Render.com için backend (API) deploy tanımı
+# Kullanım: Render Dashboard -> New -> Blueprint -> Bu repoyu seç, render.yaml kullan
+services:
+  - type: web
+    name: nad-api
+    runtime: python
+    region: frankfurt
+    plan: free
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: CORS_ORIGINS
+        sync: false
+        # Deploy sonrası Vercel frontend URL'ini buraya ekleyin (örn. https://b2-xxx.vercel.app)

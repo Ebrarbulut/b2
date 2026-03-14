@@ -32,7 +32,7 @@ Aşağıda güçlü yanlar, zayıf yanlar ve “nerede duruyor” maddeler halin
 
 - **Birim testler yok:** `pytest` ile en azından birkaç kritik fonksiyon (path’ler, feature sayısı, model load) test edilmiyor. Jüri “test yazdın mı?” derse cevap zayıf kalır.
 
-- **Typo:** `experiements` klasör adı hâlâ yanlış; `experiments` olmalı. Küçük ama profesyonellik açısından düzeltmek iyi olur.
+- **Typo:** `experiments` klasör adı hâlâ yanlış; `experiments` olmalı. Küçük ama profesyonellik açısından düzeltmek iyi olur.
 
 - **PWA içeriği sade:** Şu an PWA’da sadece “Health / Skor test” sayfası var. Streamlit’teki dashboard, grafikler, CSV yükleme PWA’da yok. Yani “PWA’ya geçtik” demek doğru ama “tüm sistem PWA’da” demek için frontend’i zenginleştirmek gerekir. Bitirme için mevcut hali “PWA iskeleti + API” olarak sunulabilir.
 
@@ -63,7 +63,7 @@ Aşağıda güçlü yanlar, zayıf yanlar ve “nerede duruyor” maddeler halin
 1. **Canlıya al:** `CANLIYA_ALMA.md` adımlarını uygula; jüriye “canlı link” göstermek çok artı.
 2. **Rapor/tez:** En az 20–30 sayfa: giriş, literatür, yöntem (pipeline, modeller), deneyler (metrikler, tablolar), sonuç ve tartışma. README’deki mimari ve model açıklamalarını rapora taşıyıp genişletebilirsin.
 3. **Birkaç test:** `tests/` klasörü + `pytest` ile path, feature sayısı, API health/score (mock) testleri; “test yazdım” diyebilirsin.
-4. **Typo:** `experiements` → `experiments` (klasör adı + README/komutlardaki referanslar).
+4. **Typo:** `experiments` → `experiments` (klasör adı + README/komutlardaki referanslar).
 5. **Sunum:** 10–15 slayt: problem, mimari, veri akışı, modeller, sonuç ekranları, canlı demo linki.
 
 Bu analiz, projenin **şu anki haliyle** nerede durduğunu ve nelerin onu daha da güçlendireceğini özetliyor; abartısız ve dürüst bir değerlendirme amaçlanmıştır.

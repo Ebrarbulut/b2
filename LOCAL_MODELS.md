@@ -21,7 +21,7 @@ Backend ve PWA'da **Standard Autoencoder** ile **Isolation Forest** (ve isteğe 
 2. **Tüm çekirdek modelleri eğitip kaydet (Standard AE + Isolation Forest):**
 
    ```bash
-   python scripts/experiements/compare_core_models.py
+   python scripts/experiments/compare_core_models.py
    ```
 
    Bu script:
