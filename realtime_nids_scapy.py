@@ -7,6 +7,8 @@ import pandas as pd
 from scapy.all import sniff, IP, TCP, UDP, ICMP  # type: ignore
 
 from scripts.models_unsupervised.standard_autoencoder import StandardAutoencoder
+from scripts.models_unsupervised.one_class_svm_detector import OneClassSVMDetector
+from scripts.models_unsupervised.isolation_forest_detector import IsolationForestDetector
 
 
 # === GENEL AYARLAR ===
@@ -18,6 +20,9 @@ MODELS_DIR = BASE_DIR / "models"
 FLOW_TIMEOUT_SECONDS = 60  # Bir flow bu kadar süredir yeni paket almıyorsa kapat
 MAX_OPEN_FLOWS = 10_000    # Çok büyümesini engelle
 BATCH_SIZE = 100           # Aynı anda modele gönderilecek flow sayısı
+
+# Hassasiyet ayarı: 'yuksek' (çok uyarı), 'orta', 'dusuk' (daha az uyarı)
+SENSITIVITY = "dusuk"
 
 
 def _load_feature_columns() -> list[str]:
@@ -75,6 +80,49 @@ def _load_standard_autoencoder() -> StandardAutoencoder:
     )
 
 
+def _load_ocsvm() -> OneClassSVMDetector | None:
+    """
+    One-Class SVM modelini yükle (varsa).
+    """
+    model_path = MODELS_DIR / "one_class_svm.pkl"
+    scaler_path = MODELS_DIR / "ocsvm_scaler.pkl"
+    config_path = BASE_DIR / "ocsvm_config.pkl"
+    if not model_path.exists() or not scaler_path.exists() or not config_path.exists():
+        print("⚠️ One-Class SVM model dosyaları bulunamadı, sadece Autoencoder kullanılacak.")
+        return None
+    try:
+        return OneClassSVMDetector.load_model(
+            model_path=str(model_path),
+            scaler_path=str(scaler_path),
+            config_path=str(config_path),
+        )
+    except Exception as e:
+        print(f"⚠️ One-Class SVM yüklenemedi: {e}")
+        return None
+
+
+def _load_isolation_forest() -> IsolationForestDetector | None:
+    """
+    Isolation Forest modelini yükle (varsa).
+    Not: Bu model veri setinde daha zayıf performans gösterdi; sadece ek sinyal olarak kullanıyoruz.
+    """
+    model_path = MODELS_DIR / "isolation_forest.pkl"
+    scaler_path = MODELS_DIR / "if_scaler.pkl"
+    config_path = BASE_DIR / "if_config.pkl"
+    if not model_path.exists() or not scaler_path.exists() or not config_path.exists():
+        print("ℹ️ Isolation Forest model dosyaları bulunamadı (opsiyonel).")
+        return None
+    try:
+        return IsolationForestDetector.load_model(
+            model_path=str(model_path),
+            scaler_path=str(scaler_path),
+            config_path=str(config_path),
+        )
+    except Exception as e:
+        print(f"⚠️ Isolation Forest yüklenemedi: {e}")
+        return None
+
+
 class RealtimeNIDS:
     """
     Scapy ile gerçek zamanlı trafik yakalayıp
@@ -92,7 +140,11 @@ class RealtimeNIDS:
         self.batch_size = batch_size
 
         self.feature_columns = _load_feature_columns()
-        self.detector = _load_standard_autoencoder()
+        # Ana model: Standard Autoencoder
+        self.ae_detector = _load_standard_autoencoder()
+        # Ek sinyal: One-Class SVM (ve opsiyonel Isolation Forest)
+        self.ocsvm_detector = _load_ocsvm()
+        self.if_detector = _load_isolation_forest()
 
         # key: (src_ip, src_port, dst_ip, dst_port, proto)
         self.flows: dict[tuple, dict] = {}
@@ -103,6 +155,12 @@ class RealtimeNIDS:
         print(f"   Flow timeout: {self.flow_timeout} sn")
         print(f"   Batch size: {self.batch_size}")
         print(f"   Feature sayısı: {len(self.feature_columns)}")
+        aktif_modeller = ["Autoencoder"]
+        if self.ocsvm_detector is not None:
+            aktif_modeller.append("One-Class SVM")
+        if self.if_detector is not None:
+            aktif_modeller.append("Isolation Forest")
+        print(f"   Kullanılan modeller: {', '.join(aktif_modeller)}")
 
     # === FLOW YÖNETİMİ ===
 
@@ -228,22 +286,66 @@ class RealtimeNIDS:
         df = pd.DataFrame(rows)
         X = df.fillna(0.0).values.astype(np.float32)
 
-        # Threshold'u gerçek ortamda daha temkinli kullanmak için
-        # kaydedilen threshold'u 2.0 katsayısı ile yükseltiyoruz.
-        # Böylece model sadece en uç/vurgulu akışlar için alarm üretir.
-        adjusted_threshold = (
-            self.detector.threshold * 2.0 if self.detector.threshold is not None else None
+        # Hassasiyete göre threshold ve minimum skor ayarı (baz alınan model: Autoencoder)
+        if SENSITIVITY == "yuksek":
+            factor = 1.5
+            min_score = 0.8
+        elif SENSITIVITY == "orta":
+            factor = 2.0
+            min_score = 1.0
+        else:  # "dusuk"
+            factor = 3.0
+            min_score = 1.5
+
+        ae_threshold = (
+            self.ae_detector.threshold * factor if self.ae_detector.threshold is not None else None
         )
 
-        preds, scores = self.detector.predict(X, threshold=adjusted_threshold)
+        ae_preds, ae_scores = self.ae_detector.predict(X, threshold=ae_threshold)
 
-        for f, pred, score in zip(meta, preds, scores):
-            # Çok düşük skorlu (0'a yakın) anomalileri loglama, yalnızca anlamlı olanları göster
-            if int(pred) == 1 and float(score) > 1.0:
+        # Diğer modellerden de skor/pred al (varsa)
+        oc_preds = oc_scores = None
+        if self.ocsvm_detector is not None:
+            oc_preds, oc_scores = self.ocsvm_detector.predict(X)
+
+        if_preds = if_scores = None
+        if self.if_detector is not None:
+            if_preds, if_scores = self.if_detector.predict(X)
+
+        for idx, (f, ae_pred, ae_score) in enumerate(zip(meta, ae_preds, ae_scores)):
+            # Model başına anomaly flag
+            votes = []
+            scores_str = [f"AE={float(ae_score):.3f}"]
+
+            ae_anom = int(ae_pred) == 1 and float(ae_score) > min_score
+            votes.append(ae_anom)
+
+            if oc_preds is not None and oc_scores is not None:
+                oc_score = float(oc_scores[idx])
+                oc_anom = int(oc_preds[idx]) == 1 and oc_score > min_score
+                votes.append(oc_anom)
+                scores_str.append(f"OCSVM={oc_score:.3f}")
+
+            if if_preds is not None and if_scores is not None:
+                if_score = float(if_scores[idx])
+                if_anom = int(if_preds[idx]) == 1 and if_score > min_score
+                votes.append(if_anom)
+                scores_str.append(f"IF={if_score:.3f}")
+
+            # Karar kuralı:
+            # - Birden fazla model varsa: en az 2 model "anomali" diyorsa uyar.
+            # - Sadece Autoencoder varsa: AE anomali ve skor > min_score ise uyar.
+            fire = False
+            if len(votes) == 1:
+                fire = votes[0]
+            else:
+                fire = sum(1 for v in votes if v) >= 2
+
+            if fire:
                 print(
                     f"🚨 ANOMALY | {f['id.orig_h']}:{f['id.orig_p']} -> "
                     f"{f['id.resp_h']}:{f['id.resp_p']} | proto={f['proto']} "
-                    f"| score={float(score):.6f}"
+                    f"| scores: {', '.join(scores_str)}"
                 )
 
         self.last_flush_time = now

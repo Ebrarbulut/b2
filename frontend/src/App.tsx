@@ -19,25 +19,57 @@ const modelLabels: Record<string, string> = {
   demo: 'Demo',
 }
 
-const card = {
-  marginTop: 24,
-  padding: '24px 22px',
-  borderRadius: 18,
-  background: 'linear-gradient(145deg, rgba(244,114,182,0.07), rgba(96,165,250,0.05))',
-  border: '1px solid rgba(244,114,182,0.22)',
-  boxShadow: '0 6px 28px rgba(15,23,42,0.2)',
-} as const
+const makeCardStyle = (theme: 'light' | 'dark') =>
+  ({
+    marginTop: 24,
+    padding: '24px 22px',
+    borderRadius: 18,
+    background:
+      theme === 'light'
+        ? 'linear-gradient(145deg, #ffffff 0%, #fdf2f8 30%, #eff6ff 100%)'
+        : 'linear-gradient(145deg, rgba(20,20,20,0.95), rgba(30,30,35,0.9))',
+    border:
+      theme === 'light'
+        ? '1px solid rgba(219,39,119,0.25)'
+        : '1px solid rgba(244,114,182,0.2)',
+    boxShadow:
+      theme === 'light'
+        ? '0 4px 24px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)'
+        : '0 4px 24px rgba(0,0,0,0.4)',
+  } as const)
 
-const title = {
-  margin: '0 0 6px 0',
-  fontSize: 17,
-  fontWeight: 600,
-  background: 'linear-gradient(90deg, #f9a8d4, #93c5fd)',
-  WebkitBackgroundClip: 'text' as const,
-  color: 'transparent',
-}
+const makeTitleStyle = (theme: 'light' | 'dark') =>
+  ({
+    margin: '0 0 6px 0',
+    fontSize: 17,
+    fontWeight: 600,
+    background:
+      theme === 'light'
+        ? 'linear-gradient(90deg, #db2777, #4f46e5)'
+        : 'linear-gradient(90deg, #f9a8d4, #93c5fd)',
+    WebkitBackgroundClip: 'text' as const,
+    color: 'transparent',
+  })
 
-const desc = { color: '#94a3b8', fontSize: 13, marginBottom: 14 } as const
+const makeDescStyle = (theme: 'light' | 'dark') =>
+  ({
+    color: theme === 'light' ? '#374151' : '#d1d5db',
+    fontSize: 13,
+    marginBottom: 14,
+    lineHeight: 1.55,
+  } as const)
+
+// Tema renkleri: okunabilirlik ve premium his için yüksek kontrast
+const themeColors = (theme: 'light' | 'dark') => ({
+  text: theme === 'light' ? '#111827' : '#f3f4f6',
+  textMuted: theme === 'light' ? '#4b5563' : '#9ca3af',
+  cardBg: theme === 'light' ? 'rgba(255,255,255,0.85)' : 'rgba(17,17,17,0.6)',
+  inputBg: theme === 'light' ? '#f9fafb' : 'rgba(30,30,30,0.9)',
+  inputBorder: theme === 'light' ? 'rgba(107,114,128,0.4)' : 'rgba(148,163,184,0.4)',
+  boxBg: theme === 'light' ? '#f3f4f6' : 'rgba(30,30,30,0.8)',
+  preBg: theme === 'light' ? '#1f2937' : '#0f172a',
+  preText: theme === 'light' ? '#e5e7eb' : '#cbd5e1',
+})
 
 export default function App() {
   const [health, setHealth] = useState<string>('')
@@ -53,10 +85,35 @@ export default function App() {
   const [comparison, setComparison] = useState<{ available: boolean; rows: Record<string, unknown>[] } | null>(null)
   const [installable, setInstallable] = useState(false)
   const [checkIntervalMinutes, setCheckIntervalMinutes] = useState(1)
-  const [backgroundMode, setBackgroundMode] = useState<'off' | 'interval' | 'hours'>('off')
+  const [backgroundMode, setBackgroundMode] = useState<'off' | 'interval' | 'hours' | 'always'>('off')
   const [hourStart, setHourStart] = useState(9)
   const [hourEnd, setHourEnd] = useState(18)
   const [showHelp, setShowHelp] = useState(false)
+  const [csvSummary, setCsvSummary] = useState<{
+    model: string
+    total_rows: number
+    anomaly_count: number
+    anomaly_ratio: number
+    score_min: number
+    score_max: number
+    score_mean: number
+  } | null>(null)
+  const [csvError, setCsvError] = useState<string | null>(null)
+  const [csvLoading, setCsvLoading] = useState(false)
+  const csvInputRef = useRef<HTMLInputElement | null>(null)
+  const [pcapSummary, setPcapSummary] = useState<{
+    model: string
+    total_rows: number
+    anomaly_count: number
+    anomaly_ratio: number
+    score_min: number
+    score_max: number
+    score_mean: number
+  } | null>(null)
+  const [pcapError, setPcapError] = useState<string | null>(null)
+  const [pcapLoading, setPcapLoading] = useState(false)
+  const pcapInputRef = useRef<HTMLInputElement | null>(null)
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const installPromptRef = useRef<{ prompt: () => void } | null>(null)
 
   useEffect(() => {
@@ -159,6 +216,72 @@ export default function App() {
     }
   }
 
+  const analyzeCsv = async () => {
+    const file = csvInputRef.current?.files?.[0]
+    if (!file) {
+      setCsvError('Lütfen bir CSV dosyası seçin.')
+      return
+    }
+    setCsvError(null)
+    setCsvSummary(null)
+    setCsvLoading(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      if (selectedModel !== 'auto') {
+        form.append('model', selectedModel)
+      }
+      const r = await fetch(buildUrl('/api/analyze-csv'), {
+        method: 'POST',
+        body: form,
+      })
+      const text = await r.text()
+      if (!r.ok) {
+        setCsvError(text.slice(0, 300) || 'Analiz sırasında hata oluştu.')
+        return
+      }
+      const j = JSON.parse(text)
+      setCsvSummary(j)
+    } catch (e) {
+      setCsvError('İstek hatası: ' + String(e))
+    } finally {
+      setCsvLoading(false)
+    }
+  }
+
+  const analyzePcap = async () => {
+    const file = pcapInputRef.current?.files?.[0]
+    if (!file) {
+      setPcapError('Lütfen bir PCAP dosyası seçin.')
+      return
+    }
+    setPcapError(null)
+    setPcapSummary(null)
+    setPcapLoading(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      if (selectedModel !== 'auto') {
+        form.append('model', selectedModel)
+      }
+      const r = await fetch(buildUrl('/api/analyze-pcap'), {
+        method: 'POST',
+        body: form,
+      })
+      const text = await r.text()
+      if (!r.ok) {
+        setPcapError(text.slice(0, 300) || 'Analiz sırasında hata oluştu.')
+        return
+      }
+      const j = JSON.parse(text)
+      setPcapSummary(j)
+    } catch (e) {
+      setPcapError('İstek hatası: ' + String(e))
+    } finally {
+      setPcapLoading(false)
+    }
+  }
+
   useEffect(() => {
     checkHealth()
     fetchModels()
@@ -167,6 +290,10 @@ export default function App() {
 
   useEffect(() => {
     if (backgroundMode === 'off') return
+    if (backgroundMode === 'always') {
+      const id = window.setInterval(checkHealth, 5 * 60 * 1000)
+      return () => clearInterval(id)
+    }
     if (backgroundMode === 'interval') {
       const ms = checkIntervalMinutes * 60 * 1000
       const id = window.setInterval(checkHealth, ms)
@@ -182,14 +309,26 @@ export default function App() {
     }
   }, [backgroundMode, checkIntervalMinutes, hourStart, hourEnd])
 
+  const colors = themeColors(theme)
+  const bgStyle =
+    theme === 'light'
+      ? {
+          minHeight: '100vh',
+          background:
+            'radial-gradient(circle at top, #ffe4f3 0, #faf5f9 40%, #eff6ff 70%, #e0f2fe 100%)',
+          color: '#111827',
+          padding: '20px 16px 40px',
+        }
+      : {
+          minHeight: '100vh',
+          background: '#0a0a0a',
+          color: '#f3f4f6',
+          padding: '20px 16px 40px',
+        }
+
   return (
     <div
-      style={{
-        minHeight: '100vh',
-        background: 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(248,113,182,0.2), transparent), radial-gradient(ellipse 60% 40% at 100% 50%, rgba(96,165,250,0.12), transparent), #0f172a',
-        color: '#e5e7eb',
-        padding: '20px 16px 40px',
-      }}
+      style={bgStyle}
     >
       <div style={{ maxWidth: 920, margin: '0 auto' }}>
         {/* Üst: Başlık + API durumu + Yükle */}
@@ -209,18 +348,21 @@ export default function App() {
                 fontSize: 24,
                 fontWeight: 700,
                 margin: 0,
-                background: 'linear-gradient(120deg, #f9a8d4, #93c5fd)',
+                background:
+                  theme === 'light'
+                    ? 'linear-gradient(120deg, #db2777, #4f46e5)'
+                    : 'linear-gradient(120deg, #f9a8d4, #93c5fd)',
                 WebkitBackgroundClip: 'text',
                 color: 'transparent',
               }}
             >
               Ağ Anomali Tespiti
             </h1>
-            <p style={{ color: '#94a3b8', marginTop: 6, fontSize: 14, maxWidth: 420 }}>
-              Trafiğinizin normal mi yoksa şüpheli mi olduğunu yapay zeka modelleriyle kontrol edin. İsterseniz kendi bilgisayarınızda canlı analiz de yapabilirsiniz.
+            <p style={{ color: colors.textMuted, marginTop: 6, fontSize: 14, maxWidth: 460, lineHeight: 1.5 }}>
+              Ağınızdaki trafiğin sakin mi, yoksa şüpheli mi olduğunu birkaç tıkla görebilirsiniz. İsterseniz hazır modellerle deneme yapın, isterseniz kendi trafik dosyalarınızı veya canlı trafiğinizi inceleyin.
             </p>
-            <p style={{ color: '#64748b', marginTop: 6, fontSize: 12, maxWidth: 420 }}>
-              Bu uygulama PWA olarak indirilebilir: bilgisayar veya telefonda tarayıcıdan &quot;Uygulamayı yükle&quot; ile kurup uygulama gibi kullanabilirsiniz (masaüstü .exe değildir).
+            <p style={{ color: colors.textMuted, marginTop: 6, fontSize: 12, maxWidth: 420, opacity: 0.9 }}>
+              Uygulamayı tarayıcıdan &quot;Uygulamayı yükle&quot; diyerek telefonunuza ya da bilgisayarınıza kurabilirsiniz. Kurulduktan sonra normal bir uygulama gibi açılır (masaüstü .exe yerine modern web uygulaması olarak çalışır).
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -228,17 +370,33 @@ export default function App() {
               style={{
                 padding: '8px 14px',
                 borderRadius: 12,
-                background: healthStatus === 'up' ? 'rgba(34,197,94,0.15)' : healthStatus === 'down' ? 'rgba(239,68,68,0.15)' : 'rgba(148,163,184,0.15)',
-                border: `1px solid ${healthStatus === 'up' ? 'rgba(34,197,94,0.5)' : healthStatus === 'down' ? 'rgba(239,68,68,0.5)' : 'rgba(148,163,184,0.4)'}`,
+                background: healthStatus === 'up' ? 'rgba(34,197,94,0.15)' : healthStatus === 'down' ? 'rgba(239,68,68,0.15)' : theme === 'light' ? 'rgba(107,114,128,0.15)' : 'rgba(148,163,184,0.15)',
+                border: `1px solid ${healthStatus === 'up' ? 'rgba(34,197,94,0.5)' : healthStatus === 'down' ? 'rgba(239,68,68,0.5)' : theme === 'light' ? 'rgba(107,114,128,0.4)' : 'rgba(148,163,184,0.4)'}`,
                 fontSize: 13,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
+                color: colors.text,
               }}
             >
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: healthStatus === 'up' ? '#22c55e' : healthStatus === 'down' ? '#ef4444' : '#94a3b8' }} />
               Sunucu: {healthStatus === 'up' ? 'Bağlı' : healthStatus === 'down' ? 'Bağlı değil' : '—'} {lastCheck && ` · ${lastCheck}`}
             </div>
+            <button
+              onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 999,
+                border: theme === 'light' ? '1px solid #d1d5db' : '1px solid rgba(148,163,184,0.5)',
+                background: theme === 'light' ? '#fff' : 'rgba(30,30,30,0.8)',
+                color: colors.text,
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              {theme === 'light' ? 'Koyu moda geç' : 'Açık moda geç'}
+            </button>
             {installable && (
               <button
                 onClick={handleInstall}
@@ -261,24 +419,24 @@ export default function App() {
         </header>
 
         {!API_BASE && !isLocal && (
-          <p style={{ color: '#fbbf24', fontSize: 13, marginBottom: 16 }}>
+          <p style={{ color: theme === 'light' ? '#b45309' : '#fbbf24', fontSize: 13, marginBottom: 16 }}>
             Canlıda backend adresi ayarlı değil. Vercel → Environment Variables → VITE_API_URL ekleyip yeniden deploy edin.
           </p>
         )}
 
         {/* 1. Bağlantı ve örnek analiz */}
-        <section style={card}>
-          <h2 style={title}>Bağlantı ve örnek analiz</h2>
-          <p style={desc}>
-            Sunucuya ulaşılabiliyor mu görmek için bağlantıyı test edin. Örnek analiz ile seçtiğiniz modelin bir trafik örneğine verdiği risk skorunu görebilirsiniz.
+        <section style={makeCardStyle(theme)}>
+          <h2 style={makeTitleStyle(theme)}>Bağlantı ve örnek analiz</h2>
+          <p style={makeDescStyle(theme)}>
+            Önce sunucunun ayakta olduğunu kontrol edin, ardından seçtiğiniz modelin örnek bir trafik üzerinde verdiği risk skorunu görün.
           </p>
-          <button type="button" onClick={() => setShowHelp((h) => !h)} style={{ marginBottom: 12, padding: '6px 12px', fontSize: 12, background: 'rgba(148,163,184,0.2)', border: '1px solid rgba(148,163,184,0.4)', borderRadius: 8, color: '#93c5fd', cursor: 'pointer' }}>
+          <button type="button" onClick={() => setShowHelp((h) => !h)} style={{ marginBottom: 12, padding: '8px 14px', fontSize: 12, background: colors.boxBg, border: `1px solid ${colors.inputBorder}`, borderRadius: 10, color: theme === 'light' ? '#6366f1' : '#93c5fd', cursor: 'pointer', fontWeight: 500 }}>
             {showHelp ? 'Ne işe yarar? (kapat)' : 'Ne işe yarar?'}
           </button>
           {showHelp && (
-            <div style={{ marginBottom: 14, padding: 14, background: 'rgba(15,23,42,0.6)', borderRadius: 12, border: '1px solid rgba(148,163,184,0.2)', fontSize: 13, color: '#cbd5e1' }}>
-              <p style={{ margin: '0 0 8px 0' }}><strong>Bağlantıyı kontrol et:</strong> Uygulama sunucuya (API) bir istek gönderir. Sunucu &quot;çalışıyorum&quot; diye yanıt verirse bağlantı sağlam demektir; böylece sistemin canlı olup olmadığını anlarsınız.</p>
-              <p style={{ margin: 0 }}><strong>Örnek analiz dene:</strong> Uygulama sunucuya sabit bir örnek trafik vektörü (sayılar listesi) gönderir. Sunucudaki model bu veriyi analiz edip bir risk skoru üretir. Bu, gerçek trafiğiniz değildir; sadece modelin çalıştığını ve örnek veriye nasıl yanıt verdiğini görmeniz içindir.</p>
+            <div style={{ marginBottom: 14, padding: 16, background: colors.boxBg, borderRadius: 12, border: `1px solid ${colors.inputBorder}`, fontSize: 13, color: colors.text, lineHeight: 1.6 }}>
+              <p style={{ margin: '0 0 8px 0' }}><strong>Bağlantıyı kontrol et:</strong> Sunucuya bir istek gider; &quot;çalışıyorum&quot; yanıtı gelirse bağlantı sağlam demektir.</p>
+              <p style={{ margin: 0 }}><strong>Örnek analiz dene:</strong> Sabit bir örnek veri modele gönderilir; dönen risk skoru modelin canlı ve çalışır durumda olduğunu gösterir.</p>
             </div>
           )}
           <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -286,49 +444,51 @@ export default function App() {
               <button onClick={checkHealth} disabled={isChecking} style={{ padding: '10px 18px', borderRadius: 12, border: 'none', background: '#0ea5e9', color: 'white', cursor: isChecking ? 'default' : 'pointer', fontWeight: 500 }}>
                 {isChecking ? 'Kontrol ediliyor...' : 'Bağlantıyı kontrol et'}
               </button>
-              <p style={{ margin: '4px 0 0 0', fontSize: 11, color: '#64748b', maxWidth: 220 }}>Sunucuya bir istek atar; yanıt &quot;ok&quot; ise API ayakta demektir.</p>
+              <p style={{ margin: '4px 0 0 0', fontSize: 11, color: colors.textMuted, maxWidth: 220 }}>Sunucuya istek atar; yanıt &quot;ok&quot; ise API ayakta.</p>
             </div>
             <div>
               <button onClick={testScore} disabled={isScoring} style={{ padding: '10px 18px', borderRadius: 12, border: 'none', background: '#22c55e', color: 'white', cursor: isScoring ? 'default' : 'pointer', fontWeight: 500 }}>
                 {isScoring ? 'Analiz ediliyor...' : 'Örnek analiz dene'}
               </button>
-              <p style={{ margin: '4px 0 0 0', fontSize: 11, color: '#64748b', maxWidth: 220 }}>Sabit örnek veriyi modele gönderir; dönen risk skoru modelin canlı olduğunu gösterir.</p>
+              <p style={{ margin: '4px 0 0 0', fontSize: 11, color: colors.textMuted, maxWidth: 220 }}>Örnek veriyi modele gönderir; skor modelin canlı olduğunu gösterir.</p>
             </div>
             <div style={{ marginLeft: 4 }}>
-              <span style={{ fontSize: 12, color: '#94a3b8', marginRight: 8 }}>Arka plan kontrolü:</span>
+              <span style={{ fontSize: 12, color: colors.textMuted, marginRight: 8 }}>Arka plan kontrolü:</span>
               <select
                 value={backgroundMode}
-                onChange={(e) => setBackgroundMode(e.target.value as 'off' | 'interval' | 'hours')}
-                style={{ background: 'rgba(15,23,42,0.7)', color: '#e5e7eb', border: '1px solid rgba(148,163,184,0.4)', borderRadius: 8, padding: '6px 10px', fontSize: 12 }}
+                onChange={(e) => setBackgroundMode(e.target.value as 'off' | 'interval' | 'hours' | 'always')}
+                style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}`, borderRadius: 8, padding: '6px 10px', fontSize: 12 }}
               >
                 <option value="off">Kapalı</option>
-                <option value="interval">Her X dakikada bir</option>
+                <option value="interval">Her X saatte bir / günde bir</option>
                 <option value="hours">Sadece belirli saatlerde</option>
+                <option value="always">Hep açık (sürekli takip)</option>
               </select>
               {backgroundMode === 'interval' && (
                 <span style={{ marginLeft: 8 }}>
                   <select
                     value={checkIntervalMinutes}
                     onChange={(e) => setCheckIntervalMinutes(Number(e.target.value))}
-                    style={{ background: 'rgba(15,23,42,0.7)', color: '#e5e7eb', border: '1px solid rgba(148,163,184,0.4)', borderRadius: 8, padding: '4px 8px', fontSize: 12 }}
+                    style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}`, borderRadius: 8, padding: '4px 8px', fontSize: 12 }}
                   >
-                    <option value={1}>1 dk</option>
-                    <option value={5}>5 dk</option>
-                    <option value={15}>15 dk</option>
-                    <option value={30}>30 dk</option>
+                    <option value={60}>1 saatte bir</option>
+                    <option value={180}>3 saatte bir</option>
+                    <option value={300}>5 saatte bir</option>
+                    <option value={600}>10 saatte bir</option>
+                    <option value={1440}>1 günde bir</option>
                   </select>
                 </span>
               )}
               {backgroundMode === 'hours' && (
                 <span style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <label style={{ fontSize: 12, color: '#94a3b8' }}>Saat</label>
-                  <select value={hourStart} onChange={(e) => setHourStart(Number(e.target.value))} style={{ background: 'rgba(15,23,42,0.7)', color: '#e5e7eb', border: '1px solid rgba(148,163,184,0.4)', borderRadius: 8, padding: '4px 6px', fontSize: 12 }}>
+                  <label style={{ fontSize: 12, color: colors.textMuted }}>Saat</label>
+                  <select value={hourStart} onChange={(e) => setHourStart(Number(e.target.value))} style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}`, borderRadius: 8, padding: '4px 6px', fontSize: 12 }}>
                     {Array.from({ length: 24 }, (_, i) => (
                       <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
                     ))}
                   </select>
-                  <span style={{ color: '#64748b' }}>–</span>
-                  <select value={hourEnd} onChange={(e) => setHourEnd(Number(e.target.value))} style={{ background: 'rgba(15,23,42,0.7)', color: '#e5e7eb', border: '1px solid rgba(148,163,184,0.4)', borderRadius: 8, padding: '4px 6px', fontSize: 12 }}>
+                  <span style={{ color: colors.textMuted }}>–</span>
+                  <select value={hourEnd} onChange={(e) => setHourEnd(Number(e.target.value))} style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}`, borderRadius: 8, padding: '4px 6px', fontSize: 12 }}>
                     {Array.from({ length: 24 }, (_, i) => (
                       <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
                     ))}
@@ -337,11 +497,11 @@ export default function App() {
               )}
             </div>
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 13, color: '#94a3b8' }}>Örnek analizde kullanılacak model:</span>
+              <span style={{ fontSize: 13, color: colors.textMuted }}>Analizde kullanılacak model:</span>
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                style={{ background: 'rgba(15,23,42,0.8)', color: '#e5e7eb', borderRadius: 12, border: '1px solid rgba(148,163,184,0.4)', padding: '8px 12px', fontSize: 13 }}
+                style={{ background: colors.inputBg, color: colors.text, borderRadius: 12, border: `1px solid ${colors.inputBorder}`, padding: '8px 12px', fontSize: 13 }}
               >
                 <option value="auto">Otomatik (önerilen)</option>
                 <option value="ensemble">Ensemble</option>
@@ -354,110 +514,212 @@ export default function App() {
           </div>
           {health && (
             <div style={{ marginTop: 12 }}>
-              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: '#94a3b8' }}>Sunucu yanıtı (bağlantı sağlamsa &quot;ok&quot; görürsünüz)</p>
-              <pre style={{ background: 'rgba(15,23,42,0.7)', padding: 12, borderRadius: 12, border: '1px solid rgba(148,163,184,0.25)', fontSize: 12, maxHeight: 160, overflow: 'auto', margin: 0 }}>
+              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: colors.textMuted }}>Sunucu yanıtı</p>
+              <pre style={{ background: colors.preBg, color: colors.preText, padding: 12, borderRadius: 12, border: `1px solid ${colors.inputBorder}`, fontSize: 12, maxHeight: 160, overflow: 'auto', margin: 0 }}>
                 {health}
               </pre>
             </div>
           )}
           {scores !== null && (
-            <div style={{ marginTop: 16, padding: 18, borderRadius: 14, background: 'linear-gradient(135deg, rgba(248,113,165,0.1), rgba(59,130,246,0.06))', border: '1px solid rgba(248,113,165,0.3)' }}>
-              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: '#94a3b8' }}>Örnek analiz sonucu</p>
-              <p style={{ margin: 0, fontSize: 14 }}>
+            <div style={{ marginTop: 16, padding: 18, borderRadius: 14, background: theme === 'light' ? 'linear-gradient(135deg, rgba(251,207,232,0.4), rgba(219,234,254,0.4))' : 'linear-gradient(135deg, rgba(248,113,165,0.12), rgba(59,130,246,0.08))', border: theme === 'light' ? '1px solid rgba(219,39,119,0.3)' : '1px solid rgba(248,113,165,0.3)' }}>
+              <p style={{ margin: '0 0 6px 0', fontSize: 12, color: colors.textMuted }}>Örnek analiz sonucu</p>
+              <p style={{ margin: 0, fontSize: 14, color: colors.text }}>
                 <strong>Risk skoru:</strong> {scores.map((x) => (typeof x === 'number' ? x.toFixed(4) : x)).join(', ')}
-                {usedModelName && <span style={{ color: '#93c5fd', marginLeft: 8 }}>(kullanılan model: {modelLabels[usedModelName] || usedModelName})</span>}
+                {usedModelName && <span style={{ color: theme === 'light' ? '#6366f1' : '#93c5fd', marginLeft: 8 }}>(model: {modelLabels[usedModelName] || usedModelName})</span>}
               </p>
-              {scoreNote && <p style={{ fontSize: 13, color: '#e2e8f0', marginTop: 8, marginBottom: 0 }}>{scoreNote}</p>}
+              {scoreNote && <p style={{ fontSize: 13, color: colors.text, marginTop: 8, marginBottom: 0 }}>{scoreNote}</p>}
             </div>
           )}
         </section>
 
-        {/* 2. Kendi ağını analiz et */}
-        <section style={card}>
-          <h2 style={title}>Kendi bilgisayarınızda canlı analiz</h2>
-          <p style={desc}>
-            İsterseniz bu programı kendi bilgisayarınızda çalıştırıp ağ trafiğinizi arka planda analiz ettirebilirsiniz. Şüpheli görünen bağlantılar konsolda işaretlenir; bilgisayarınızı sürekli meşgul etmez, sadece paketler geldikçe değerlendirilir.
+        {/* 2. CSV ile toplu analiz */}
+        <section style={makeCardStyle(theme)}>
+          <h2 style={makeTitleStyle(theme)}>CSV ile toplu analiz</h2>
+          <p style={makeDescStyle(theme)}>
+            Eğitimde kullandığınız özellik kolonlarına uyumlu bir CSV yükleyin; seçtiğiniz model tüm satırları tarayıp anomali oranını ve skor özetini verir.
           </p>
-          <div style={{ background: 'rgba(15,23,42,0.45)', padding: 18, borderRadius: 14, border: '1px solid rgba(148,163,184,0.18)', fontSize: 13 }}>
-            <p style={{ margin: '0 0 10px 0', color: '#e2e8f0' }}><strong>Nasıl yapılır?</strong></p>
-            <ol style={{ margin: 0, paddingLeft: 20, color: '#cbd5e1', lineHeight: 1.85 }}>
-              <li>PowerShell veya terminali <strong>Yönetici olarak çalıştır</strong>.</li>
-              <li>Proje klasörüne gidin; sanal ortamı açın: <code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 6 }}>.\venv\Scripts\activate</code></li>
-              <li>Şu komutu yazın: <code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 6 }}>python realtime_nids_scapy.py</code></li>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+            <input
+              ref={csvInputRef}
+              type="file"
+              accept=".csv"
+              style={{ fontSize: 12, color: colors.text }}
+            />
+            <button
+              onClick={analyzeCsv}
+              disabled={csvLoading}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 12,
+                border: 'none',
+                background: '#6366f1',
+                color: 'white',
+                cursor: csvLoading ? 'default' : 'pointer',
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+            >
+              {csvLoading ? 'Analiz ediliyor...' : 'CSV dosyasını analiz et'}
+            </button>
+          </div>
+          {csvError && (
+            <p style={{ color: '#f97373', fontSize: 12, marginTop: 4 }}>{csvError}</p>
+          )}
+          {csvSummary && (
+            <div style={{ marginTop: 10, padding: 14, borderRadius: 12, background: colors.boxBg, border: `1px solid ${colors.inputBorder}`, fontSize: 13, color: colors.text }}>
+              <p style={{ margin: '0 0 4px 0' }}>
+                <strong>Model:</strong> {csvSummary.model in modelLabels ? modelLabels[csvSummary.model] : csvSummary.model}
+              </p>
+              <p style={{ margin: '0 0 4px 0' }}>
+                <strong>Toplam satır:</strong> {csvSummary.total_rows}
+              </p>
+              <p style={{ margin: '0 0 4px 0' }}>
+                <strong>Anomali sayısı:</strong> {csvSummary.anomaly_count} ({(csvSummary.anomaly_ratio * 100).toFixed(2)}%)
+              </p>
+              <p style={{ margin: 0 }}>
+                <strong>Skor aralığı:</strong> min {csvSummary.score_min.toFixed(4)} · ort {csvSummary.score_mean.toFixed(4)} · max {csvSummary.score_max.toFixed(4)}
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* 3. PCAP ile toplu analiz */}
+        <section style={makeCardStyle(theme)}>
+          <h2 style={makeTitleStyle(theme)}>PCAP ile toplu analiz</h2>
+          <p style={makeDescStyle(theme)}>
+            Wireshark veya benzeri araçlarla kaydettiğiniz `.pcap` / `.pcapng` dosyasını yükleyin; akış bazında anomali oranı ve skor özeti hesaplanır.
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+            <input
+              ref={pcapInputRef}
+              type="file"
+              accept=".pcap,.pcapng"
+              style={{ fontSize: 12, color: colors.text }}
+            />
+            <button
+              onClick={analyzePcap}
+              disabled={pcapLoading}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 12,
+                border: 'none',
+                background: '#0ea5e9',
+                color: 'white',
+                cursor: pcapLoading ? 'default' : 'pointer',
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+            >
+              {pcapLoading ? 'Analiz ediliyor...' : 'PCAP dosyasını analiz et'}
+            </button>
+          </div>
+          {pcapError && (
+            <p style={{ color: '#f97373', fontSize: 12, marginTop: 4 }}>{pcapError}</p>
+          )}
+          {pcapSummary && (
+            <div style={{ marginTop: 10, padding: 14, borderRadius: 12, background: colors.boxBg, border: `1px solid ${colors.inputBorder}`, fontSize: 13, color: colors.text }}>
+              <p style={{ margin: '0 0 4px 0' }}>
+                <strong>Model:</strong> {pcapSummary.model in modelLabels ? modelLabels[pcapSummary.model] : pcapSummary.model}
+              </p>
+              <p style={{ margin: '0 0 4px 0' }}>
+                <strong>Toplam flow:</strong> {pcapSummary.total_rows}
+              </p>
+              <p style={{ margin: '0 0 4px 0' }}>
+                <strong>Anomali sayısı:</strong> {pcapSummary.anomaly_count} ({(pcapSummary.anomaly_ratio * 100).toFixed(2)}%)
+              </p>
+              <p style={{ margin: 0 }}>
+                <strong>Skor aralığı:</strong> min {pcapSummary.score_min.toFixed(4)} · ort {pcapSummary.score_mean.toFixed(4)} · max {pcapSummary.score_max.toFixed(4)}
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* 4. Kendi ağını analiz et */}
+        <section style={makeCardStyle(theme)}>
+          <h2 style={makeTitleStyle(theme)}>Kendi bilgisayarınızda canlı analiz</h2>
+          <p style={makeDescStyle(theme)}>
+            Kendi bilgisayarınızda sensörü çalıştırarak ağ trafiğinizi canlı izleyebilirsiniz. Şüpheli akışlar konsolda uyarı olarak gösterilir; durdurmak için Ctrl+C yeterli.
+          </p>
+          <div style={{ background: colors.boxBg, padding: 18, borderRadius: 14, border: `1px solid ${colors.inputBorder}`, fontSize: 13, color: colors.text, lineHeight: 1.7 }}>
+            <p style={{ margin: '0 0 10px 0', fontWeight: 600 }}>Nasıl yapılır?</p>
+            <ol style={{ margin: 0, paddingLeft: 20 }}>
+              <li>PowerShell veya terminali <strong>Yönetici olarak</strong> açın.</li>
+              <li>Proje klasörüne gidip sanal ortamı açın: <code style={{ background: colors.preBg, color: colors.preText, padding: '2px 8px', borderRadius: 6, fontSize: 12 }}>.\venv\Scripts\activate</code></li>
+              <li>Şu komutu çalıştırın: <code style={{ background: colors.preBg, color: colors.preText, padding: '2px 8px', borderRadius: 6, fontSize: 12 }}>python realtime_nids_scapy.py</code></li>
             </ol>
-            <p style={{ margin: '14px 0 0 0', color: '#94a3b8', fontSize: 12 }}>
-              Normal kullanımda az uyarı, gerçekten şüpheli trafikte daha fazla uyarı görmeniz beklenir. Durdurmak için Ctrl+C yeterli.
+            <p style={{ margin: '14px 0 0 0', fontSize: 12, color: colors.textMuted }}>
+              Normal trafikte az uyarı, gerçekten sıra dışı akışlarda daha fazla uyarı görürsünüz.
             </p>
           </div>
         </section>
 
-        {/* 3. Model karşılaştırma */}
-        <section style={card}>
-          <h2 style={title}>Modeller ve performans</h2>
-          <p style={desc}>
-            Hangi modellerin yüklü olduğu ve (lokalde karşılaştırma script&#39;i çalıştırıldıysa) doğruluk, F1, hassasiyet gibi metrikler aşağıda.
+        {/* 5. Model karşılaştırma */}
+        <section style={makeCardStyle(theme)}>
+          <h2 style={makeTitleStyle(theme)}>Modeller ve performans</h2>
+          <p style={makeDescStyle(theme)}>
+            Sunucuda yüklü modeller ve (karşılaştırma çalıştırıldıysa) doğruluk, F1, hassasiyet gibi metrikler aşağıda.
           </p>
           {apiModels && (
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
-              <span style={{ color: '#c4b5fd', fontSize: 13 }}>Yüklü: {apiModels.models.length ? apiModels.models.map((m) => modelLabels[m] || m).join(', ') : 'yok'}</span>
-              {apiModels.ensemble_available && <span style={{ padding: '4px 10px', borderRadius: 999, background: 'rgba(167,139,250,0.2)', border: '1px solid rgba(167,139,250,0.5)', fontSize: 12 }}>Ensemble kullanılabilir</span>}
+              <span style={{ color: theme === 'light' ? '#6366f1' : '#c4b5fd', fontSize: 13 }}>Yüklü: {apiModels.models.length ? apiModels.models.map((m) => modelLabels[m] || m).join(', ') : 'yok'}</span>
+              {apiModels.ensemble_available && <span style={{ padding: '4px 10px', borderRadius: 999, background: theme === 'light' ? 'rgba(99,102,241,0.15)' : 'rgba(167,139,250,0.2)', border: theme === 'light' ? '1px solid rgba(99,102,241,0.4)' : '1px solid rgba(167,139,250,0.5)', fontSize: 12, color: colors.text }}>Ensemble kullanılabilir</span>}
             </div>
           )}
           {comparison?.available && comparison.rows?.length > 0 ? (
-            <div style={{ overflowX: 'auto', borderRadius: 14, border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.5)', marginBottom: 14 }}>
+            <div style={{ overflowX: 'auto', borderRadius: 14, border: `1px solid ${colors.inputBorder}`, background: colors.boxBg, marginBottom: 14 }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr>
-                    <th style={{ textAlign: 'left', padding: '12px 14px', color: '#93c5fd' }}>Model</th>
-                    <th style={{ textAlign: 'right', padding: '12px 14px', color: '#93c5fd' }}>Accuracy</th>
-                    <th style={{ textAlign: 'right', padding: '12px 14px', color: '#93c5fd' }}>F1</th>
-                    <th style={{ textAlign: 'right', padding: '12px 14px', color: '#93c5fd' }}>Recall</th>
-                    <th style={{ textAlign: 'right', padding: '12px 14px', color: '#93c5fd' }}>Precision</th>
-                    <th style={{ textAlign: 'right', padding: '12px 14px', color: '#93c5fd' }}>ROC-AUC</th>
-                    <th style={{ textAlign: 'right', padding: '12px 14px', color: '#93c5fd' }}>FPR</th>
+                    <th style={{ textAlign: 'left', padding: '12px 14px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>Model</th>
+                    <th style={{ textAlign: 'right', padding: '12px 14px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>Accuracy</th>
+                    <th style={{ textAlign: 'right', padding: '12px 14px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>F1</th>
+                    <th style={{ textAlign: 'right', padding: '12px 14px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>Recall</th>
+                    <th style={{ textAlign: 'right', padding: '12px 14px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>Precision</th>
+                    <th style={{ textAlign: 'right', padding: '12px 14px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>ROC-AUC</th>
+                    <th style={{ textAlign: 'right', padding: '12px 14px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>FPR</th>
                   </tr>
                 </thead>
                 <tbody>
                   {comparison.rows.map((row: Record<string, unknown>, i: number) => (
                     <tr key={i}>
-                      <td style={{ padding: '10px 14px', color: '#e2e8f0' }}>{modelLabels[String(row.model)] || String(row.model)}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: '#cbd5e1' }}>{typeof row.accuracy === 'number' ? (row.accuracy as number).toFixed(4) : '—'}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: '#cbd5e1' }}>{typeof row.f1 === 'number' ? (row.f1 as number).toFixed(4) : '—'}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: '#cbd5e1' }}>{typeof row.recall === 'number' ? (row.recall as number).toFixed(4) : '—'}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: '#cbd5e1' }}>{typeof row.precision === 'number' ? (row.precision as number).toFixed(4) : '—'}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: '#cbd5e1' }}>{typeof row.roc_auc === 'number' ? (row.roc_auc as number).toFixed(4) : '—'}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: '#cbd5e1' }}>{typeof row.false_positive_rate === 'number' ? (row.false_positive_rate as number).toFixed(4) : '—'}</td>
+                      <td style={{ padding: '10px 14px', color: colors.text }}>{modelLabels[String(row.model)] || String(row.model)}</td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', color: colors.textMuted }}>{typeof row.accuracy === 'number' ? (row.accuracy as number).toFixed(4) : '—'}</td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', color: colors.textMuted }}>{typeof row.f1 === 'number' ? (row.f1 as number).toFixed(4) : '—'}</td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', color: colors.textMuted }}>{typeof row.recall === 'number' ? (row.recall as number).toFixed(4) : '—'}</td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', color: colors.textMuted }}>{typeof row.precision === 'number' ? (row.precision as number).toFixed(4) : '—'}</td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', color: colors.textMuted }}>{typeof row.roc_auc === 'number' ? (row.roc_auc as number).toFixed(4) : '—'}</td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', color: colors.textMuted }}>{typeof row.false_positive_rate === 'number' ? (row.false_positive_rate as number).toFixed(4) : '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : (
-            <div style={{ background: 'rgba(15,23,42,0.5)', padding: 14, borderRadius: 12, border: '1px solid rgba(148,163,184,0.2)', fontSize: 13, color: '#94a3b8', marginBottom: 14 }}>
-              Karşılaştırma verisi yok. Lokalde proje kökünde: <code style={{ display: 'block', marginTop: 6, background: 'rgba(0,0,0,0.3)', padding: '8px 10px', borderRadius: 8 }}>python scripts\experiements\compare_core_models.py</code>
+            <div style={{ background: colors.boxBg, padding: 14, borderRadius: 12, border: `1px solid ${colors.inputBorder}`, fontSize: 13, color: colors.textMuted, marginBottom: 14 }}>
+              Karşılaştırma verisi yok. Lokalde proje kökünde: <code style={{ display: 'block', marginTop: 6, background: colors.preBg, color: colors.preText, padding: '8px 10px', borderRadius: 8 }}>python scripts\experiements\compare_core_models.py</code>
               Sonra backend&#39;i yeniden başlatıp sayfayı yenileyin.
             </div>
           )}
-          <div style={{ marginBottom: 14, padding: 12, borderRadius: 12, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)', fontSize: 12, color: '#cbd5e1' }}>
-            <strong style={{ color: '#93c5fd' }}>Model durumları nasıl yorumlanır?</strong> F1 ve Accuracy yüksek (örn. &gt;0,7), FPR (yanlış pozitif oranı) düşükse model iyi sayılır. ROC-AUC 1&#39;e yakınsa ayırt etme gücü yüksektir. Tabloda bu metrikleri karşılaştırarak hangi modelin sizin kullanımınıza daha uygun olduğunu görebilirsiniz.
+          <div style={{ marginBottom: 14, padding: 14, borderRadius: 12, background: theme === 'light' ? 'rgba(99,102,241,0.08)' : 'rgba(59,130,246,0.08)', border: theme === 'light' ? '1px solid rgba(99,102,241,0.25)' : '1px solid rgba(59,130,246,0.25)', fontSize: 12, color: colors.text, lineHeight: 1.55 }}>
+            <strong style={{ color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>Metrikleri nasıl okursunuz?</strong> F1 ve Accuracy yüksek (örn. &gt;0,7), FPR düşükse model güvenilir sayılır. ROC-AUC 1&#39;e yakınsa anomali ile normal trafiği iyi ayırıyor demektir.
           </div>
-          <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.4)' }}>
+          <div style={{ overflowX: 'auto', borderRadius: 12, border: `1px solid ${colors.inputBorder}`, background: colors.boxBg }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', padding: '10px 12px', color: '#93c5fd' }}>Model</th>
-                  <th style={{ textAlign: 'left', padding: '10px 12px', color: '#93c5fd' }}>Sunucu durumu</th>
+                  <th style={{ textAlign: 'left', padding: '10px 12px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>Model</th>
+                  <th style={{ textAlign: 'left', padding: '10px 12px', color: theme === 'light' ? '#4f46e5' : '#93c5fd' }}>Sunucu durumu</th>
                 </tr>
               </thead>
               <tbody>
                 {['standard_ae', 'isolation_forest', 'one_class_svm', 'lstm_ae', 'ensemble'].map((key) => (
                   <tr key={key}>
-                    <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>{modelLabels[key] || key}</td>
+                    <td style={{ padding: '10px 12px', color: colors.text }}>{modelLabels[key] || key}</td>
                     <td style={{ padding: '10px 12px' }}>
                       {key === 'ensemble' ? (
-                        apiModels?.ensemble_available ? <span style={{ color: '#86efac' }}>Kullanılabilir</span> : <span style={{ color: '#94a3b8' }}>En az bir model gerekli</span>
+                        apiModels?.ensemble_available ? <span style={{ color: '#059669' }}>Kullanılabilir</span> : <span style={{ color: colors.textMuted }}>En az bir model gerekli</span>
                       ) : (
-                        apiModels?.models?.includes(key) ? <span style={{ color: '#86efac' }}>Yüklü</span> : <span style={{ color: '#94a3b8' }}>Yok</span>
+                        apiModels?.models?.includes(key) ? <span style={{ color: '#059669' }}>Yüklü</span> : <span style={{ color: colors.textMuted }}>Yok</span>
                       )}
                     </td>
                   </tr>
